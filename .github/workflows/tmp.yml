@@ -9,6 +9,8 @@ on:
 jobs:
   replace-version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write        # ← fixes the 403
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
