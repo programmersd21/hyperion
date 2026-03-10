@@ -7,7 +7,7 @@
  ██╔══██║  ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗██║██║   ██║██║╚██╗██║
  ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║
  ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-                  <strong style="color:#1e88e5;">H Y P E R I O N · v0.2.0</strong>
+                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.0.1</strong>
       <span style="color:#ff6f00;">Linux 6.19.6</span> <span style="color:#e53935;">·</span> <span style="color:#00e676;">Optimised</span> <span style="color:#e53935;">·</span> <span style="color:#ffea00;">Stable</span> <span style="color:#e53935;">·</span> <span style="color:#e040fb;">Developer-Friendly</span>
 </pre>
 
@@ -22,7 +22,7 @@
 <img src="https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
 </a>
 <a href="https://kernel.org">
-<img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--0.2.0-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
+<img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--2.0.1-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
 </a>
 <a href="#supported-architectures">
 <img src="https://img.shields.io/badge/arch-x86__64-green?style=for-the-badge&color=f9a825" alt="Architecture">
@@ -69,8 +69,8 @@ Hyperion is designed for:
 - Developers building and testing kernel modules without fighting header or symbol versioning issues
 
 ```
-uname -r  →  6.19.6-Hyperion-0.2.0
-uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.2.0 (Soumalya Das) 2026
+uname -r  →  6.19.6-Hyperion-2.0.1
+uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.0.1 (Soumalya Das) 2026
 ```
 
 ---
@@ -92,7 +92,7 @@ Hyperion is built on four principles:
 
 | Category | Feature | Details |
 |---|---|---|
-| **Identity** | Custom branding | `uname -r` → `6.19.6-Hyperion-0.2.0` |
+| **Identity** | Custom branding | `uname -r` → `6.19.6-Hyperion-2.0.1` |
 | **Scheduler** | Full preemption | `CONFIG_PREEMPT=y` — lowest latency desktop |
 | **Scheduler** | Autogroup | `CONFIG_SCHED_AUTOGROUP=y` — session-aware scheduling |
 | **Timer** | 1000 Hz tick | `CONFIG_HZ_1000=y` — 1ms granularity |
@@ -151,8 +151,8 @@ Hyperion is built on four principles:
 Hyperion treats module compatibility as a **first-class feature**, not an afterthought.
 
 **What this means in practice:**
-- Kernel headers are installed to `/usr/src/linux-headers-6.19.6-Hyperion-0.2.0/`
-- The build symlink `/lib/modules/6.19.6-Hyperion-0.2.0/build` always points to the correct headers directory
+- Kernel headers are installed to `/usr/src/linux-headers-6.19.6-Hyperion-2.0.1/`
+- The build symlink `/lib/modules/6.19.6-Hyperion-2.0.1/build` always points to the correct headers directory
 - `CONFIG_IKHEADERS=y` makes headers available at `/sys/kernel/kheaders.tar.xz` as a runtime fallback
 - `CONFIG_MODVERSIONS=y` means every exported symbol carries a CRC checksum — mismatched modules are rejected cleanly at `insmod` with a clear error, not a kernel panic
 - `CONFIG_MODULE_SRCVERSION_ALL=y` embeds a srcversion hash in every module for traceability
@@ -235,7 +235,7 @@ make olddefconfig
 make menuconfig
 
 # 5. Build (use all cores)
-make -j$(nproc) LOCALVERSION="-Hyperion-0.2.0"
+make -j$(nproc) LOCALVERSION="-Hyperion-2.0.1"
 
 # 6. Build modules
 make modules -j$(nproc)
@@ -273,14 +273,14 @@ sudo reboot
 
 # Verify identity
 uname -r
-# Expected: 6.19.6-Hyperion-0.2.0
+# Expected: 6.19.6-Hyperion-2.0.1
 
 uname -v
-# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.2.0 (Soumalya Das) 2026
+# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.0.1 (Soumalya Das) 2026
 
 # Verify headers symlink
 ls -la /lib/modules/$(uname -r)/build
-# Should point to /usr/src/linux-headers-6.19.6-Hyperion-0.2.0
+# Should point to /usr/src/linux-headers-6.19.6-Hyperion-2.0.1
 
 # Test DKMS
 sudo dkms status
@@ -304,7 +304,7 @@ chmod +x ./scripts/generate-initramfs.sh
 ```bash
 sudo apt install v4l2loopback-dkms   # or your distro equivalent
 sudo dkms status
-# v4l2loopback/0.12.x, 6.19.6-Hyperion-0.2.0, x86_64: installed
+# v4l2loopback/0.12.x, 6.19.6-Hyperion-2.0.1, x86_64: installed
 ```
 
 ---

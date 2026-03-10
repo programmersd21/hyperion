@@ -3,7 +3,7 @@
 # Hyperion Kernel — Automated Build & Install Script
 # Author: Soumalya Das
 # Year: 2026
-# Version: 0.2.0
+# Version: 2.0.1
 # =============================================================================
 
 set -euo pipefail
@@ -38,7 +38,7 @@ banner() {
     echo " ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║"
     echo " ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝"
     echo -e "\n"
-    echo " Hyperion Kernel Build System v0.2.0 | Author: Soumalya Das | Year: 2026"
+    echo " Hyperion Kernel Build System v2.0.1 | Author: Soumalya Das | Year: 2026"
     echo -e "\n"
 }
 
@@ -104,7 +104,7 @@ parse_config() {
     PATCH="${cfg[CONFIG_PATCHLEVEL]:-0}"
     SUBLEVEL="${cfg[CONFIG_SUBLEVEL]:-0}"
     EXTRAVERSION="${cfg[CONFIG_EXTRAVERSION]:-}"
-    LOCALVERSION="${cfg[CONFIG_LOCALVERSION]:--Hyperion-0.2.0}"
+    LOCALVERSION="${cfg[CONFIG_LOCALVERSION]:--Hyperion-2.0.1}"
 
     [[ ! "$VERSION" =~ ^[0-9]+$ ]] && error "CONFIG_VERSION must be integer"
     [[ ! "$PATCH" =~ ^[0-9]+$ ]] && error "CONFIG_PATCHLEVEL must be integer"
