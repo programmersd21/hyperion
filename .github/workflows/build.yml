@@ -8,75 +8,72 @@ permissions:
   actions: write
 
 jobs:
+
   validate-config:
     name: Validate Hyperion Config
     runs-on: ubuntu-latest
+
     outputs:
-      VERSION: ${{ steps.parse-config.outputs.VERSION }}
-      PATCH: ${{ steps.parse-config.outputs.PATCH }}
-      SUB: ${{ steps.parse-config.outputs.SUB }}
-      EXTRA: ${{ steps.parse-config.outputs.EXTRA }}
-      LOCAL: ${{ steps.parse-config.outputs.LOCAL }}
-      TAG: ${{ steps.parse-config.outputs.TAG }}
-      HYPERION_VER: ${{ steps.parse-config.outputs.HYPERION_VER }}
-      FULL_VERSION: ${{ steps.parse-config.outputs.FULL_VERSION }}
-      CONFIG_HASH: ${{ steps.parse-config.outputs.CONFIG_HASH }}
-      PATCHES_HASH: ${{ steps.parse-config.outputs.PATCHES_HASH }}
+      VERSION: ${{ steps.parse.outputs.VERSION }}
+      PATCH: ${{ steps.parse.outputs.PATCH }}
+      SUB: ${{ steps.parse.outputs.SUB }}
+      EXTRA: ${{ steps.parse.outputs.EXTRA }}
+      LOCAL: ${{ steps.parse.outputs.LOCAL }}
+      TAG: ${{ steps.parse.outputs.TAG }}
+      HYPERION_VER: ${{ steps.parse.outputs.HYPERION_VER }}
+      FULL_VERSION: ${{ steps.parse.outputs.FULL_VERSION }}
+      CONFIG_HASH: ${{ steps.parse.outputs.CONFIG_HASH }}
+      PATCHES_HASH: ${{ steps.parse.outputs.PATCHES_HASH }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate and parse hyperion.config with full hashing
-        id: parse-config
+      - name: Parse hyperion.config
+        id: parse
         run: |
-          python3 - << 'EOF'
+          python3 << 'EOF'
           import sys, os, hashlib, glob
-          
+
           config = {}
-          with open('hyperion.config') as f:
+
+          with open("hyperion.config") as f:
               for line in f:
-                  line = line.strip()
-                  if not line or line.startswith('#'): continue
-                  if '=' not in line:
-                      print(f"Invalid line: {line}")
-                      sys.exit(1)
-                  k, v = line.split('=', 1)
-                  config[k.strip()] = v.strip().strip('"')
-          
-          def parse_int(k, d=0):
-              val = config.get(k, '')
-              if val == '': return d
+                  line=line.strip()
+                  if not line or line.startswith("#"): continue
+                  k,v=line.split("=",1)
+                  config[k.strip()]=v.strip().strip('"')
+
+          def parse_int(k):
               try:
-                  return int(val)
-              except ValueError:
-                  print(f"Invalid {k}: {val}"); sys.exit(1)
-          
-          VERSION = parse_int('CONFIG_VERSION')
-          PATCH   = parse_int('CONFIG_PATCHLEVEL')
-          SUB     = parse_int('CONFIG_SUBLEVEL')
-          EXTRA   = config.get('CONFIG_EXTRAVERSION', '') or ''
-          LOCAL   = config.get('CONFIG_LOCALVERSION', '') or ''
-          FULL_VERSION = f"{VERSION}.{PATCH}" if SUB == 0 else f"{VERSION}.{PATCH}.{SUB}"
-          HYPERION_VER = LOCAL.split('-Hyperion-', 1)[-1] if '-Hyperion-' in LOCAL else LOCAL.lstrip('-')
-          TAG = HYPERION_VER
-          
-          # Hash the config file
-          with open('hyperion.config', 'rb') as f:
-              CONFIG_HASH = hashlib.sha256(f.read()).hexdigest()[:12]
-          
-          # Hash all patches
-          patches = sorted(glob.glob('patches/*.patch'))
+                  return int(config.get(k,0))
+              except:
+                  print("Invalid value:",k)
+                  sys.exit(1)
+
+          VERSION=parse_int("CONFIG_VERSION")
+          PATCH=parse_int("CONFIG_PATCHLEVEL")
+          SUB=parse_int("CONFIG_SUBLEVEL")
+
+          EXTRA=config.get("CONFIG_EXTRAVERSION","")
+          LOCAL=config.get("CONFIG_LOCALVERSION","")
+
+          FULL_VERSION=f"{VERSION}.{PATCH}" if SUB==0 else f"{VERSION}.{PATCH}.{SUB}"
+
+          HYPERION_VER=LOCAL.split("-Hyperion-",1)[-1] if "-Hyperion-" in LOCAL else LOCAL.lstrip("-")
+          TAG=HYPERION_VER
+
+          CONFIG_HASH=hashlib.sha256(open("hyperion.config","rb").read()).hexdigest()[:12]
+
+          patches=sorted(glob.glob("patches/*.patch"))
           if patches:
-              patch_content = b''
-              for patch_file in patches:
-                  with open(patch_file, 'rb') as f:
-                      patch_content += f.read()
-              PATCHES_HASH = hashlib.sha256(patch_content).hexdigest()[:12]
+              data=b''.join(open(p,"rb").read() for p in patches)
+              PATCHES_HASH=hashlib.sha256(data).hexdigest()[:12]
           else:
-              PATCHES_HASH = 'none'
-          
-          out = os.environ['GITHUB_OUTPUT']
-          with open(out, 'a') as f:
+              PATCHES_HASH="none"
+
+          out=os.environ["GITHUB_OUTPUT"]
+
+          with open(out,"a") as f:
               f.write(f"VERSION={VERSION}\n")
               f.write(f"PATCH={PATCH}\n")
               f.write(f"SUB={SUB}\n")
@@ -93,384 +90,117 @@ jobs:
     name: Build Linux Hyperion Kernel
     needs: validate-config
     runs-on: ubuntu-latest
+
     env:
       KERNEL_VERSION:  ${{ needs.validate-config.outputs.VERSION }}
-      PATCHLEVEL:      ${{ needs.validate-config.outputs.PATCH }}
-      SUBLEVEL:        ${{ needs.validate-config.outputs.SUB }}
-      EXTRAVERSION:    ${{ needs.validate-config.outputs.EXTRA }}
-      LOCALVERSION:    ${{ needs.validate-config.outputs.LOCAL }}
-      TAG_NAME:        ${{ needs.validate-config.outputs.TAG }}
-      HYPERION_VER:    ${{ needs.validate-config.outputs.HYPERION_VER }}
       FULL_VERSION:    ${{ needs.validate-config.outputs.FULL_VERSION }}
       CONFIG_HASH:     ${{ needs.validate-config.outputs.CONFIG_HASH }}
       PATCHES_HASH:    ${{ needs.validate-config.outputs.PATCHES_HASH }}
-      KBUILD_BUILD_USER: Soumalya Das
+      TAG_NAME:        ${{ needs.validate-config.outputs.TAG }}
+      HYPERION_VER:    ${{ needs.validate-config.outputs.HYPERION_VER }}
+
+      KBUILD_BUILD_USER: Soumalya
       KBUILD_BUILD_HOST: hyperion-ci
-      # CRITICAL: Deterministic timestamp for ccache to work
-      KBUILD_BUILD_TIMESTAMP: '2024-01-01 00:00:00 UTC'
-      # Compiler cache settings
+      KBUILD_BUILD_TIMESTAMP: "2024-01-01 00:00:00 UTC"
+      KBUILD_BUILD_VERSION: 1
+      SOURCE_DATE_EPOCH: 1704067200
+
       CCACHE_DIR: ${{ github.workspace }}/.ccache
-      CCACHE_COMPRESS: 'true'
-      CCACHE_MAXSIZE: '3G'
-      CCACHE_SLOPPINESS: 'locale,time_macros'
-      CCACHE_HARDLINK: 'true'
-      CCACHE_DIRECT: 'true'
+      CCACHE_MAXSIZE: 5G
+      CCACHE_COMPRESS: true
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_NOHASHDIR: true
 
     steps:
+
       - uses: actions/checkout@v4
 
-      - name: Print Hyperion ASCII Banner in Console
+      - name: Install dependencies
         run: |
-          echo " ██╗  ██╗██╗   ██╗██████╗ ███████╗██████╗ ██╗ ██████╗ ███╗   ██╗"
-          echo " ██║  ██║╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██║██╔═══██╗████╗  ██║"
-          echo " ███████║ ╚████╔╝ ██████╔╝█████╗  ██████╔╝██║██║   ██║██╔██╗ ██║"
-          echo " ██╔══██║  ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗██║██║   ██║██║╚██╗██║"
-          echo " ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║"
-          echo " ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝"
-          echo " Hyperion Kernel Build CI | Tag: ${TAG_NAME} | User: ${KBUILD_BUILD_USER}"
-          echo " Kernel: ${FULL_VERSION} | Config: ${CONFIG_HASH} | Patches: ${PATCHES_HASH}"
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential bc bison flex \
+            libssl-dev libelf-dev libncurses-dev \
+            dwarves rsync cpio git wget curl \
+            ccache zstd
 
-      # LAYER 1: System package caching (APT)
-      - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: >
-            build-essential libncurses-dev bison flex libssl-dev libelf-dev
-            dwarves bc pahole git make gcc zstd cpio perl tar rsync
-            ccache wget curl
-          version: 1.1
-
-      # LAYER 2: Restore ccache (compiler output cache)
-      - name: Restore ccache from previous builds
+      - name: Restore ccache
         uses: actions/cache@v4
-        id: cache-ccache
         with:
-          path: ${{ env.CCACHE_DIR }}
-          key: ccache-hyperion-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}-${{ env.PATCHES_HASH }}
-          restore-keys: |
-            ccache-hyperion-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}-
-            ccache-hyperion-${{ env.FULL_VERSION }}-
-            ccache-hyperion-
+          path: .ccache
+          key: ccache-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}
 
-      # LAYER 3: Cache kernel tarball (rarely invalidates)
-      - name: Restore kernel tarball cache
+      - name: Restore kernel tarball
         uses: actions/cache@v4
-        id: cache-kernel-tar
+        id: kernel-tar
         with:
           path: linux-${{ env.FULL_VERSION }}.tar.xz
-          key: kernel-tar-${{ env.FULL_VERSION }}-v1
+          key: kernel-${{ env.FULL_VERSION }}
 
-      # LAYER 4: Cache entire build tree (source + all .o files + build artifacts)
-      # This is the CRITICAL cache - it contains the complete kernel state
-      - name: Restore complete kernel build tree
-        uses: actions/cache@v4
-        id: cache-kernel-tree
-        with:
-          path: |
-            .kernel-build/linux-${{ env.FULL_VERSION }}
-            .kernel-obj/
-          key: kernel-tree-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}-${{ env.PATCHES_HASH }}-${{ github.run_number }}
-          restore-keys: |
-            kernel-tree-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}-${{ env.PATCHES_HASH }}-
-            kernel-tree-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}-
-            kernel-tree-${{ env.FULL_VERSION }}-
-
-      - name: Download kernel tarball if missing
-        if: steps.cache-kernel-tar.outputs.cache-hit != 'true'
+      - name: Download kernel
+        if: steps.kernel-tar.outputs.cache-hit != 'true'
         run: |
-          echo "Downloading Linux kernel ${FULL_VERSION}..."
-          wget -q --show-progress \
-            https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz
-          ls -lh linux-${FULL_VERSION}.tar.xz
-          # Verify SHA
-          echo "Kernel tarball downloaded successfully"
+          wget https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz
+          wget https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/sha256sums.asc
+          grep "linux-${FULL_VERSION}.tar.xz" sha256sums.asc | sha256sum -c -
 
-      - name: Prepare kernel source and build directories
+      - name: Extract kernel
         run: |
-          mkdir -p .kernel-build .kernel-obj
-          
-          cd .kernel-build
-          
-          # Extract kernel source only if not in cache
-          if [ ! -d "linux-${FULL_VERSION}" ]; then
-            echo ">>> Extracting kernel source (cache miss)..."
-            tar -xf ../linux-${FULL_VERSION}.tar.xz
-            
-            # Normalize extracted directory name
-            EXTRACTED=$(find . -maxdepth 1 -mindepth 1 -type d | head -1 | sed 's|^\./||')
-            if [ "$EXTRACTED" != "linux-${FULL_VERSION}" ]; then
-              mv "$EXTRACTED" "linux-${FULL_VERSION}"
-            fi
-            echo "✓ Kernel source extracted"
-          else
-            echo "✓ Kernel source restored from cache"
-          fi
-          
-          cd ..
-          
-          # Create symlink to separate object directory
-          if [ ! -L ".kernel-build/linux-${FULL_VERSION}/obj" ]; then
-            mkdir -p ".kernel-obj/linux-${FULL_VERSION}"
-            ln -sf "../../.kernel-obj/linux-${FULL_VERSION}" \
-              ".kernel-build/linux-${FULL_VERSION}/obj"
-          fi
-          
-          echo "Build tree structure ready:"
-          ls -la .kernel-build/
-          ls -la .kernel-obj/
+          tar -xf linux-${FULL_VERSION}.tar.xz
+          mv linux-${FULL_VERSION} kernel
 
-      - name: Install build dependencies
+      - name: Apply config
+        working-directory: kernel
         run: |
-          echo "Build dependencies restored from apt cache"
-          # Verify tools exist
-          for tool in gcc make bison flex perl; do
-            which $tool || { echo "ERROR: $tool not found"; exit 1; }
-          done
-          echo "✓ All build tools available"
+          cp ../hyperion.config .config
+          make olddefconfig
 
-      - name: Configure kernel (smart configuration)
-        working-directory: .kernel-build/linux-${{ env.FULL_VERSION }}
+      - name: Prepare kernel
+        working-directory: kernel
         run: |
-          if [ -f ".config" ]; then
-            if cmp -s ".config" "../../hyperion.config"; then
-              echo "✓ Kernel config unchanged, skipping olddefconfig"
-              exit 0
-            fi
-          fi
-          
-          echo ">>> Applying new kernel config..."
-          cp "../../hyperion.config" ".config"
-          
-          # Use object directory if separated build is available
-          make O=obj olddefconfig \
-            LOCALVERSION="${LOCALVERSION}" \
-            KBUILD_BUILD_USER="${KBUILD_BUILD_USER}" \
-            KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}"
-          
-          echo "✓ Kernel configured"
+          make prepare
+          make modules_prepare
 
-      - name: Apply patches (skip if already applied)
-        working-directory: .kernel-build/linux-${{ env.FULL_VERSION }}
+      - name: Apply patches
+        working-directory: kernel
         run: |
+          set -e
           shopt -s nullglob
-          PATCHES=(../../patches/*.patch)
-          
-          if [ ${#PATCHES[@]} -eq 0 ]; then
-            echo "ℹ No patches to apply"
-            exit 0
-          fi
-          
-          echo "Patches found: ${#PATCHES[@]}"
-          
-          # Create marker file to track if patches were applied
-          PATCH_MARKER=".patches-applied-${PATCHES_HASH:0:12}"
-          
-          if [ -f "$PATCH_MARKER" ]; then
-            echo "✓ Patches already applied (cached), skipping"
-            exit 0
-          fi
-          
-          echo ">>> Applying ${#PATCHES[@]} patches..."
-          for patch in "${PATCHES[@]}"; do
-            echo "  Applying: $(basename $patch)"
-            git apply "$patch" 2>/dev/null || patch -p1 < "$patch" || {
-              echo "ERROR: Failed to apply patch: $patch"
-              exit 1
-            }
-          done
-          
-          touch "$PATCH_MARKER"
-          echo "✓ Patches applied successfully"
-
-      - name: Initialize and verify ccache
-        run: |
-          # Ensure ccache is installed
-          if ! command -v ccache &> /dev/null; then
-            sudo apt-get update -qq && \
-            sudo apt-get install -y ccache 2>/dev/null
-          fi
-          
-          echo "=== ccache Configuration ==="
-          echo "CCACHE_DIR: ${CCACHE_DIR}"
-          echo "CCACHE_MAXSIZE: ${CCACHE_MAXSIZE}"
-          echo "CCACHE_COMPRESS: ${CCACHE_COMPRESS}"
-          echo "CCACHE_DIRECT: ${CCACHE_DIRECT}"
-          echo "KBUILD_BUILD_TIMESTAMP: ${KBUILD_BUILD_TIMESTAMP}"
-          echo "============================"
-          
-          # Zero stats for this run
-          ccache -z
-          
-          echo "✓ ccache initialized"
-
-      - name: Build kernel with full caching and parallelization
-        working-directory: .kernel-build/linux-${{ env.FULL_VERSION }}
-        run: |
-          set -o pipefail
-          
-          {
-            echo " ██╗  ██╗██╗   ██╗██████╗ ███████╗██████╗ ██╗ ██████╗ ███╗   ██╗"
-            echo " ██║  ██║╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██║██╔═══██╗████╗  ██║"
-            echo " ███████║ ╚████╔╝ ██████╔╝█████╗  ██████╔╝██║██║   ██║██╔██╗ ██║"
-            echo " ██╔══██║  ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗██║██║   ██║██║╚██╗██║"
-            echo " ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║"
-            echo " ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝"
-            echo " Build Log | Hyperion ${HYPERION_VER} | Linux ${FULL_VERSION}"
-            echo " Started: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-            echo ""
-            
-            time make -j$(nproc) O=obj \
-              CC="ccache gcc" \
-              CXX="ccache g++" \
-              LOCALVERSION="${LOCALVERSION}" \
-              KBUILD_BUILD_USER="${KBUILD_BUILD_USER}" \
-              KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}" \
-              KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP}" \
-              V=0 \
-              2>&1
-            
-            echo ""
-            echo "Build Status: SUCCESS"
-            echo " Completed: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          } 2>&1 | tee obj/build.log
-          
-          # Show ccache stats
-          echo ""
-          echo "=== ccache Statistics ==="
-          ccache -s
-          echo "========================="
-
-      - name: Verify build outputs exist
-        working-directory: .kernel-build/linux-${{ env.FULL_VERSION }}/obj
-        run: |
-          echo "Checking build artifacts..."
-          
-          required_files=(
-            "arch/x86/boot/bzImage"
-            "Module.symvers"
-            "vmlinux"
-          )
-          
-          for file in "${required_files[@]}"; do
-            if [ ! -f "$file" ]; then
-              echo "ERROR: Missing required file: $file"
-              ls -la
-              exit 1
-            fi
-            echo "✓ Found: $file ($(du -h $file | cut -f1))"
+          for patch in ../patches/*.patch; do
+            echo "Applying $patch"
+            patch -p1 < "$patch"
           done
 
-      - name: Create artifacts directory
+      - name: Build kernel
+        working-directory: kernel
         run: |
-          mkdir -p .artifacts
-          cd .kernel-build/linux-${FULL_VERSION}
-          
-          echo "Copying kernel artifacts..."
-          
-          # Core artifacts
-          cp obj/arch/x86/boot/bzImage ../../.artifacts/bzImage-${FULL_VERSION}
-          cp obj/Module.symvers ../../.artifacts/Module.symvers
-          cp obj/vmlinux ../../.artifacts/vmlinux
-          cp obj/build.log ../../.artifacts/build.log
-          cp ../../hyperion.config ../../.artifacts/hyperion.config
-          
-          # System.map for debugging
-          if [ -f "obj/System.map" ]; then
-            cp obj/System.map ../../.artifacts/System.map
-          fi
-          
-          cd ../../.artifacts
-          ls -lh
-          echo "✓ Artifacts prepared"
+          set -euo pipefail
 
-      - name: Package kernel release
+          make -j$(nproc --all) \
+            CC="ccache gcc" \
+            LOCALVERSION="-Hyperion-${HYPERION_VER}" \
+            bzImage modules
+
+      - name: Package artifacts
         run: |
-          cd .artifacts
-          
-          echo "Packaging kernel as .tar.zst..."
-          tar --zstd -cf ../Hyperion-Kernel-${FULL_VERSION}.tar.zst \
-            bzImage-${FULL_VERSION} \
-            Module.symvers \
-            vmlinux \
-            System.map \
-            build.log \
-            hyperion.config
-          
-          ls -lh ../Hyperion-Kernel-${FULL_VERSION}.tar.zst
-          echo "✓ Package created"
+          mkdir artifacts
 
-      - name: Generate checksums
+          cp kernel/arch/x86/boot/bzImage artifacts/
+          cp kernel/System.map artifacts/ || true
+          cp kernel/vmlinux artifacts/ || true
+          cp hyperion.config artifacts/
+
+          tar --zstd -cf Hyperion-Kernel-${FULL_VERSION}.tar.zst artifacts
+
+      - name: Checksums
         run: |
           sha256sum Hyperion-Kernel-${FULL_VERSION}.tar.zst > Hyperion-Kernel-${FULL_VERSION}.sha256
-          sha512sum Hyperion-Kernel-${FULL_VERSION}.tar.zst > Hyperion-Kernel-${FULL_VERSION}.sha512
-          
-          echo "=== Checksums ==="
-          cat Hyperion-Kernel-${FULL_VERSION}.sha256
-          echo ""
-          cat Hyperion-Kernel-${FULL_VERSION}.sha512
 
-      - name: Create GitHub Release with build artifacts
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
-          name: Hyperion ${{ env.HYPERION_VER }} based on Linux ${{ env.FULL_VERSION }}
-          body: |
-            ## Build Information
-            - **Hyperion Version**: ${{ env.HYPERION_VER }}
-            - **Linux Kernel**: ${{ env.FULL_VERSION }}
-            - **Build Date**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-            - **Config Hash**: ${{ env.CONFIG_HASH }}
-            - **Patches Hash**: ${{ env.PATCHES_HASH }}
-            
-            ## Artifacts
-            - `bzImage`: Compressed kernel image
-            - `vmlinux`: Uncompressed kernel image (with debug symbols)
-            - `Module.symvers`: Module symbols for external module builds
-            - `System.map`: Kernel symbol table
-            - `hyperion.config`: Build configuration
-            
-            ## Verification
-            ```bash
-            sha256sum -c Hyperion-Kernel-${{ env.FULL_VERSION }}.sha256
-            ```
           files: |
             Hyperion-Kernel-${{ env.FULL_VERSION }}.tar.zst
             Hyperion-Kernel-${{ env.FULL_VERSION }}.sha256
-            Hyperion-Kernel-${{ env.FULL_VERSION }}.sha512
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # DIAGNOSTICS & MONITORING
-      - name: Generate detailed cache report
-        if: always()
-        run: |
-          echo ""
-          echo "╔════════════════════════════════════════════════╗"
-          echo "║         HYPERION BUILD CACHE REPORT             ║"
-          echo "╚════════════════════════════════════════════════╝"
-          echo ""
-          echo "▸ Kernel Version: ${FULL_VERSION}"
-          echo "▸ Config Hash: ${CONFIG_HASH}"
-          echo "▸ Patches Hash: ${PATCHES_HASH}"
-          echo ""
-          echo "📦 Cache Status:"
-          echo "  ├─ APT Cache: system packages"
-          echo "  ├─ ccache Hit: ${{ steps.cache-ccache.outputs.cache-hit }}"
-          echo "  ├─ Kernel Tarball: ${{ steps.cache-kernel-tar.outputs.cache-hit }}"
-          echo "  └─ Build Tree: ${{ steps.cache-kernel-tree.outputs.cache-hit }}"
-          echo ""
-          echo "💾 Directory Sizes:"
-          du -sh .ccache 2>/dev/null || echo "  └─ ccache: (new)"
-          du -sh .kernel-build 2>/dev/null || echo "  └─ kernel-build: (new)"
-          du -sh .kernel-obj 2>/dev/null || echo "  └─ kernel-obj: (new)"
-          echo ""
-          echo "✓ Build completed successfully"
-
-      - name: Cleanup (optional - keep for next build)
-        if: always()
-        run: |
-          # Don't delete anything - we want the cache to persist!
-          echo "Preserving cache for next build:"
-          echo "  - .ccache/"
-          echo "  - .kernel-build/"
-          echo "  - .kernel-obj/"
+            
