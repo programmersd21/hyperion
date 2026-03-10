@@ -104,9 +104,7 @@ jobs:
       # every compilation unit that transitively touches <linux/version.h> gets
       # a unique preprocessed output on every run → 100% cache miss.
       # Setting it to '' makes the timestamp empty and deterministic so ccache
-      # can actually match previous runs. Confirmed by kernel.org LLVM docs and
-      # the Android/Pixel kernel team. The timestamp still appears in uname -v
-      # on the first build; subsequent warm builds will reuse cached objects.
+      # can actually match previous runs.
       KBUILD_BUILD_TIMESTAMP: ''
 
     steps:
@@ -131,15 +129,25 @@ jobs:
           path: linux-${{ env.FULL_VERSION }}.tar.xz
           key: kernel-tar-${{ env.FULL_VERSION }}
 
+      - name: Restore kernel source tree cache
+        id: cache-src
+        uses: actions/cache@v4
+        with:
+          # Cache the extracted SOURCE TREE only (no build objects).
+          # The build output lives in a SEPARATE tmpfs directory (see below),
+          # so source and objects are never mixed.
+          path: .cache-src/linux-${{ env.FULL_VERSION }}
+          key: kernel-src-${{ env.FULL_VERSION }}
+
       - name: Restore build object cache
         id: cache-build
         uses: actions/cache@v4
         with:
           # ── SPEED TWEAK 2 ──────────────────────────────────────────────────
-          # Cache the entire .cache-build tree. On a warm hit the extracted
-          # source + all previously built .o files are restored, so make only
+          # Cache the persistent copy of build output objects. On a warm hit
+          # these are restored into the tmpfs build dir, so make only
           # recompiles what changed.
-          path: .cache-build/linux-${{ env.FULL_VERSION }}
+          path: .cache-build-persistent/linux-${{ env.FULL_VERSION }}
           key: kernel-build-${{ env.FULL_VERSION }}-hyperion-${{ hashFiles('hyperion.config') }}
           restore-keys: |
             kernel-build-${{ env.FULL_VERSION }}-
@@ -149,9 +157,8 @@ jobs:
         with:
           # ── SPEED TWEAK 3 ──────────────────────────────────────────────────
           # ccache stores compiled translation units. On a warm cache with
-          # KBUILD_BUILD_TIMESTAMP='' (see above) this yields ~99% hit rate
-          # and reduces the full build from ~60 min to under 10 min.
-          # Key on sha so every push saves a new cache that future runs restore.
+          # KBUILD_BUILD_TIMESTAMP='' this yields ~99% hit rate and reduces
+          # the full build from ~60 min to under 10 min.
           path: ~/.ccache
           key: ccache-${{ env.FULL_VERSION }}-${{ github.sha }}
           restore-keys: |
@@ -171,39 +178,45 @@ jobs:
           wget -q --show-progress \
             https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz
 
-      - name: Prepare build tree
+      - name: Prepare kernel source tree
+        # BUG FIX: The source tree is now extracted to .cache-src/ (read-only
+        # reference tree), completely separate from the build output directory.
+        # Previously the tmpfs was mounted ON TOP OF the extracted source,
+        # wiping all kernel Makefiles/Kconfig files and causing:
+        #   "make: *** No rule to make target 'olddefconfig'"
         run: |
-          mkdir -p .cache-build
-          cd .cache-build
-          if [ ! -d "linux-${FULL_VERSION}" ]; then
-            echo "Extracting kernel source..."
-            tar -xf ../linux-${FULL_VERSION}.tar.xz
-            EXTRACTED_DIR=$(find . -maxdepth 1 -mindepth 1 -type d | head -1 | sed 's|^\./||')
+          mkdir -p .cache-src
+          if [ ! -d ".cache-src/linux-${FULL_VERSION}" ]; then
+            echo "Extracting kernel source to .cache-src/..."
+            tar -xf linux-${FULL_VERSION}.tar.xz -C .cache-src/
+            EXTRACTED_DIR=$(find .cache-src -maxdepth 1 -mindepth 1 -type d | head -1 | xargs basename)
             if [ "$EXTRACTED_DIR" != "linux-${FULL_VERSION}" ]; then
-              mv "$EXTRACTED_DIR" "linux-${FULL_VERSION}"
+              mv ".cache-src/$EXTRACTED_DIR" ".cache-src/linux-${FULL_VERSION}"
             fi
           else
-            echo "Build tree already present (cache hit), skipping extraction."
+            echo "Source tree already present (cache hit), skipping extraction."
           fi
 
       # ── SPEED TWEAK 4 ──────────────────────────────────────────────────────
-      # Mount a 4 GB tmpfs over the build output directory. All .o files,
-      # .cmd files, and intermediate objects are written to RAM instead of the
-      # runner's slow SSD. This eliminates disk I/O as a bottleneck.
-      # The runner has 7 GB RAM; a typical kernel build produces ~2-2.5 GB of
-      # objects, so 4 GB gives comfortable headroom.
-      - name: Mount tmpfs over build output directory
+      # Mount a 4 GB tmpfs as the BUILD OUTPUT directory. All .o files,
+      # .cmd files, and intermediate objects are written to RAM, not SSD.
+      # CRITICAL: this is now a SEPARATE directory from the source tree.
+      # Source: .cache-src/linux-${FULL_VERSION}   (disk, preserved across steps)
+      # Build:  .cache-build/linux-${FULL_VERSION} (tmpfs, RAM only)
+      # The kernel's O= flag wires them together cleanly.
+      - name: Mount tmpfs as build output directory
         run: |
           mkdir -p .cache-build/linux-${FULL_VERSION}
           # Only mount if not already a tmpfs (idempotent on re-runs)
           if ! mountpoint -q .cache-build/linux-${FULL_VERSION}; then
             sudo mount -t tmpfs -o size=4G,noatime,nodiratime \
               tmpfs .cache-build/linux-${FULL_VERSION}
-            echo "tmpfs mounted on build dir (4 GB, noatime)"
+            echo "tmpfs mounted on build output dir (4 GB, noatime)"
           fi
-          # Restore cached build objects into the tmpfs so incremental builds work
+          # Restore previously cached build objects into the tmpfs so
+          # incremental builds work (warm cache skips most recompilation)
           if [ -d .cache-build-persistent/linux-${FULL_VERSION} ]; then
-            echo "Restoring cached objects into tmpfs..."
+            echo "Restoring cached build objects into tmpfs..."
             cp -a .cache-build-persistent/linux-${FULL_VERSION}/. \
                   .cache-build/linux-${FULL_VERSION}/
           fi
@@ -228,16 +241,13 @@ jobs:
         run: |
           # ── SPEED TWEAK 6 ────────────────────────────────────────────────
           # sloppiness=locale: ignores locale env vars in the cache key
-          #   (GitHub runners may have different LC_* values run-to-run)
-          # sloppiness=time_macros: ignores __DATE__/__TIME__ in source,
-          #   which would otherwise force cache misses on files using them
+          # sloppiness=time_macros: ignores __DATE__/__TIME__ in source
           # sloppiness=include_file_mtime: ignores header mtime, only content
-          #   matters — avoids misses when apt restores headers with new mtimes
           # hash_dir=false: prevents the absolute build path from being part
           #   of the cache key (critical because tmpfs mount path varies)
           ccache --set-config=max_size=5G
           ccache --set-config=compression=true
-          ccache --set-config=compression_level=1   # fastest compression
+          ccache --set-config=compression_level=1
           ccache --set-config=sloppiness=locale,time_macros,include_file_mtime
           ccache --set-config=hash_dir=false
           ccache --zero-stats
@@ -245,10 +255,18 @@ jobs:
       # ── Kernel config ────────────────────────────────────────────────────────
 
       - name: Configure kernel
+        # BUG FIX: Use O= to point make at the separate build output directory.
+        # make is run from the SOURCE tree (.cache-src/linux-*), and all
+        # generated files (including the final .config) land in the OUTPUT
+        # directory (.cache-build/linux-*). This is the canonical Kbuild
+        # pattern for out-of-tree builds and is what makes tmpfs safe to use.
         run: |
-          cd .cache-build/linux-${FULL_VERSION}
-          cp ../../hyperion.config .config
-          make olddefconfig \
+          # Copy our config into the build output dir as .config
+          cp hyperion.config .cache-build/linux-${FULL_VERSION}/.config
+
+          make -C .cache-src/linux-${FULL_VERSION} \
+            O="$(pwd)/.cache-build/linux-${FULL_VERSION}" \
+            olddefconfig \
             LOCALVERSION="${LOCALVERSION}" \
             KBUILD_BUILD_USER="${KBUILD_BUILD_USER}" \
             KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}"
@@ -256,11 +274,12 @@ jobs:
       # ── Patches ─────────────────────────────────────────────────────────────
 
       - name: Apply patches
+        # BUG FIX: Patches are applied to the SOURCE tree, not the build dir.
         run: |
           shopt -s nullglob
           PATCHES=(patches/*.patch)
           if [ ${#PATCHES[@]} -gt 0 ]; then
-            cd .cache-build/linux-${FULL_VERSION}
+            cd .cache-src/linux-${FULL_VERSION}
             for p in "${PATCHES[@]}"; do
               echo "Applying: $p"
               git apply "../../$p" || patch -p1 < "../../$p"
@@ -274,7 +293,6 @@ jobs:
       - name: Build kernel
         run: |
           BUILD_START=$(date +%s)
-          cd .cache-build/linux-${FULL_VERSION}
 
           {
             echo " ██╗  ██╗██╗   ██╗██████╗ ███████╗██████╗ ██╗ ██████╗ ███╗   ██╗"
@@ -288,15 +306,12 @@ jobs:
             echo ""
 
             # ── SPEED TWEAK 7 ──────────────────────────────────────────────
-            # CC="ccache gcc": pass ccache as a direct wrapper. More reliable
-            #   than relying solely on the PATH shim for Kbuild.
-            # KCFLAGS="-pipe": tells GCC to use pipes between compilation
-            #   stages instead of temp files, eliminating intermediate disk I/O.
-            #   No correctness risk, universally safe.
-            # -j$(nproc): 2 parallel jobs on the GitHub runner. Attempting to
-            #   overcommit (e.g. -j4) on a CPU-bound compile actually slows
-            #   things down due to context switching overhead.
+            # CC="ccache gcc": pass ccache as a direct wrapper.
+            # KCFLAGS="-pipe": use pipes between GCC stages, no temp files.
+            # O=: direct all output to the tmpfs build directory.
             make -j$(nproc) \
+              -C .cache-src/linux-${FULL_VERSION} \
+              O="$(pwd)/.cache-build/linux-${FULL_VERSION}" \
               CC="ccache gcc" \
               KCFLAGS="-pipe" \
               LOCALVERSION="${LOCALVERSION}" \
@@ -307,14 +322,12 @@ jobs:
             BUILD_ELAPSED=$(( BUILD_END - BUILD_START ))
             echo ""
             echo " Build completed in $(( BUILD_ELAPSED / 60 ))m $(( BUILD_ELAPSED % 60 ))s"
-            echo "${BUILD_ELAPSED}" > ../../.build_seconds
-          } 2>&1 | tee build.log
+            echo "${BUILD_ELAPSED}" > .build_seconds
+          } 2>&1 | tee .cache-build/linux-${FULL_VERSION}/build.log
 
       - name: Print ccache stats
         run: |
           ccache --show-stats
-          # Warn loudly if cache hit rate is below 50% — usually means
-          # KBUILD_BUILD_TIMESTAMP was accidentally set to a dynamic value.
           HIT_RATE=$(ccache --show-stats | grep -oP 'Hits:\s+\K[0-9.]+(?=%)' | head -1 || echo 0)
           echo "Cache hit rate: ${HIT_RATE}%"
           if (( $(echo "$HIT_RATE < 50" | bc -l 2>/dev/null || echo 1) )); then
@@ -322,9 +335,9 @@ jobs:
           fi
 
       # ── SPEED TWEAK 8 ──────────────────────────────────────────────────────
-      # Persist the build objects from tmpfs back to disk BEFORE packaging.
-      # This ensures the build cache action has something to save on the next
-      # cache miss. Without this step the tmpfs objects disappear at job end.
+      # Persist build objects from tmpfs back to disk BEFORE packaging.
+      # This ensures the build cache action has something to save.
+      # Without this step the tmpfs contents vanish at job end.
       - name: Persist build objects from tmpfs to disk
         run: |
           mkdir -p .cache-build-persistent/linux-${FULL_VERSION}
@@ -335,61 +348,69 @@ jobs:
       # ── .deb packages ────────────────────────────────────────────────────────
 
       - name: Build installable .deb packages
+        # BUG FIX: bindeb-pkg must also use O= so it finds already-built
+        # objects in the tmpfs build dir (fast, no recompile).
         run: |
-          cd .cache-build/linux-${FULL_VERSION}
-          # bindeb-pkg reuses already-built objects (fast, no recompile) and
-          # produces three .deb files directly installable on Debian/Ubuntu:
-          #   linux-image-*.deb   -> kernel + modules  (dpkg -i into rootfs)
-          #   linux-headers-*.deb -> kernel headers    (DKMS, external modules)
-          #   linux-libc-dev*.deb -> userspace headers (compiling against ABI)
-          make -j$(nproc) bindeb-pkg \
+          make -j$(nproc) \
+            -C .cache-src/linux-${FULL_VERSION} \
+            O="$(pwd)/.cache-build/linux-${FULL_VERSION}" \
+            bindeb-pkg \
             CC="ccache gcc" \
             LOCALVERSION="${LOCALVERSION}" \
             KBUILD_BUILD_USER="${KBUILD_BUILD_USER}" \
             KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}"
 
-          # Rename to clean Hyperion-prefixed names
-          cd ..
-          for deb in linux-image-*.deb linux-headers-*.deb linux-libc-dev*.deb; do
+          # bindeb-pkg outputs .deb files one level above the build output dir
+          # i.e. into .cache-build/ — rename them to Hyperion-prefixed names
+          for deb in .cache-build/linux-image-*.deb \
+                     .cache-build/linux-headers-*.deb \
+                     .cache-build/linux-libc-dev*.deb; do
             [ -f "$deb" ] || continue
-            case "$deb" in
-              linux-image-*)   mv "$deb" "../Hyperion-linux-image-${FULL_VERSION}.deb" ;;
-              linux-headers-*) mv "$deb" "../Hyperion-linux-headers-${FULL_VERSION}.deb" ;;
-              linux-libc-dev*) mv "$deb" "../Hyperion-linux-libc-dev-${FULL_VERSION}.deb" ;;
+            base=$(basename "$deb")
+            case "$base" in
+              linux-image-*)   mv "$deb" "Hyperion-linux-image-${FULL_VERSION}.deb" ;;
+              linux-headers-*) mv "$deb" "Hyperion-linux-headers-${FULL_VERSION}.deb" ;;
+              linux-libc-dev*) mv "$deb" "Hyperion-linux-libc-dev-${FULL_VERSION}.deb" ;;
             esac
           done
 
-      # ── Modules + headers staging (tar.zst path, for non-Debian targets) ────
+      # ── Modules + headers staging (tar.zst path) ─────────────────────────────
 
       - name: Install modules and headers into staging
         run: |
-          cd .cache-build/linux-${FULL_VERSION}
-          mkdir -p ../../staging
+          mkdir -p staging
 
-          # INSTALL_MOD_STRIP=1 strips debug symbols from .ko files.
-          # Shrinks the modules tarball from ~1 GB down to ~150 MB.
-          make modules_install \
-            INSTALL_MOD_PATH=../../staging \
+          # INSTALL_MOD_STRIP=1 strips debug symbols → ~150 MB instead of ~1 GB
+          make \
+            -C .cache-src/linux-${FULL_VERSION} \
+            O="$(pwd)/.cache-build/linux-${FULL_VERSION}" \
+            modules_install \
+            INSTALL_MOD_PATH="$(pwd)/staging" \
             INSTALL_MOD_STRIP=1 \
             LOCALVERSION="${LOCALVERSION}"
 
-          make headers_install \
-            INSTALL_HDR_PATH=../../staging/usr \
+          make \
+            -C .cache-src/linux-${FULL_VERSION} \
+            O="$(pwd)/.cache-build/linux-${FULL_VERSION}" \
+            headers_install \
+            INSTALL_HDR_PATH="$(pwd)/staging/usr" \
             LOCALVERSION="${LOCALVERSION}"
 
       # ── Package tarballs ─────────────────────────────────────────────────────
 
       - name: Package artifacts into .tar.zst files
         run: |
-          cd .cache-build/linux-${FULL_VERSION}
-          cp ../../hyperion.config hyperion.config
+          BUILD_DIR=".cache-build/linux-${FULL_VERSION}"
+
+          # Copy config into build dir for inclusion in tarball
+          cp hyperion.config "${BUILD_DIR}/hyperion.config"
 
           # Strip vmlinux before including — unstripped ~500 MB, stripped ~10 MB.
-          # Still fully usable with perf and crash analysis tools.
-          strip --strip-debug vmlinux -o vmlinux.stripped
+          strip --strip-debug "${BUILD_DIR}/vmlinux" -o "${BUILD_DIR}/vmlinux.stripped"
 
           # 1. Core kernel image + metadata
-          tar --zstd -cf ../../Hyperion-Kernel-${FULL_VERSION}.tar.zst \
+          tar --zstd -cf Hyperion-Kernel-${FULL_VERSION}.tar.zst \
+            -C "${BUILD_DIR}" \
             arch/x86/boot/bzImage \
             vmlinux.stripped \
             System.map \
@@ -398,12 +419,12 @@ jobs:
             hyperion.config
 
           # 2. Stripped kernel modules (.ko) — extract to /lib/modules/ on target
-          tar --zstd -cf ../../Hyperion-Modules-${FULL_VERSION}.tar.zst \
-            -C ../../staging/lib/modules .
+          tar --zstd -cf Hyperion-Modules-${FULL_VERSION}.tar.zst \
+            -C staging/lib/modules .
 
           # 3. Userspace kernel headers — extract to /usr/include/ on target
-          tar --zstd -cf ../../Hyperion-Headers-${FULL_VERSION}.tar.zst \
-            -C ../../staging/usr/include .
+          tar --zstd -cf Hyperion-Headers-${FULL_VERSION}.tar.zst \
+            -C staging/usr/include .
 
       # ── Checksums ────────────────────────────────────────────────────────────
 
