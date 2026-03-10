@@ -66,12 +66,12 @@ jobs:
           TAG          = HYPERION_VER
 
           outputs = {
-              "VERSION": VERSION,
-              "PATCH": PATCH,
-              "SUB": SUB,
-              "EXTRA": EXTRA,
-              "LOCAL": LOCAL,
-              "TAG": TAG,
+              "VERSION":      VERSION,
+              "PATCH":        PATCH,
+              "SUB":          SUB,
+              "EXTRA":        EXTRA,
+              "LOCAL":        LOCAL,
+              "TAG":          TAG,
               "HYPERION_VER": HYPERION_VER,
               "FULL_VERSION": FULL_VERSION,
           }
@@ -140,17 +140,20 @@ jobs:
       - name: Download & extract kernel
         run: |
           mkdir -p build-src
-          if [ ! -f "build-src/linux-${FULL_VERSION}.tar.xz" ]; then
-            wget -q \
-              "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz" \
-              -O "build-src/linux-${FULL_VERSION}.tar.xz"
+          if [ ! -d "build-src/linux-${FULL_VERSION}" ]; then
+            if [ ! -f "build-src/linux-${FULL_VERSION}.tar.xz" ]; then
+              wget -q \
+                "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz" \
+                -O "build-src/linux-${FULL_VERSION}.tar.xz"
+            fi
+            tar -xf "build-src/linux-${FULL_VERSION}.tar.xz" -C build-src
+            EXTRACTED_DIR=$(find build-src -maxdepth 1 -mindepth 1 -type d | head -1)
+            mv "$EXTRACTED_DIR" "build-src/linux-${FULL_VERSION}"
           fi
-          tar -xf "build-src/linux-${FULL_VERSION}.tar.xz" -C build-src
-          EXTRACTED_DIR=$(find build-src -maxdepth 1 -mindepth 1 -type d | head -1)
-          mv "$EXTRACTED_DIR" "build-src/linux-${FULL_VERSION}"
 
       - name: Apply patches if any
         run: |
+          shopt -s nullglob
           PATCHES=(patches/*.patch)
           if [ ${#PATCHES[@]} -gt 0 ]; then
             cd "build-src/linux-${FULL_VERSION}"
@@ -175,7 +178,8 @@ jobs:
             KCFLAGS="-pipe" \
             LOCALVERSION="${LOCALVERSION}" \
             KBUILD_BUILD_USER="${KBUILD_BUILD_USER}" \
-            KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}"
+            KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}" \
+            2>&1 | tee build/build.log
           BUILD_END=$(date +%s)
           echo $((BUILD_END - BUILD_START)) > .build_seconds
 
@@ -220,20 +224,21 @@ jobs:
           BUILD_SEC=$(cat .build_seconds || echo 0)
           BUILD_MIN=$((BUILD_SEC / 60))
           BUILD_SEC=$((BUILD_SEC % 60))
-          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          CCACHE_HIT_RATE=$(ccache --show-stats | awk '/Hits:/ {gsub(/[()%]/,"",$NF); print $NF}')
+          cat >> "$GITHUB_STEP_SUMMARY" << 'EOF'
           ## Hyperion ${HYPERION_VER} - Build Summary
-
-          | Field            | Value                                                              |
-          |------------------|--------------------------------------------------------------------|
-          | Kernel           | Linux ${FULL_VERSION}                                              |
-          | Hyperion ver     | ${HYPERION_VER}                                                    |
-          | Release tag      | ${TAG_NAME}                                                        |
-          | Build time       | ${BUILD_MIN}m ${BUILD_SEC}s                                        |
-          | CPUs used        | $(nproc)                                                           |
-          | bzImage size     | $(du -sh build/arch/x86/boot/bzImage | cut -f1)                    |
-          | Kernel tar size  | $(du -sh "Hyperion-Kernel-${FULL_VERSION}.tar.zst" | cut -f1)      |
-          | Modules tar size | $(du -sh "Hyperion-Modules-${FULL_VERSION}.tar.zst" | cut -f1)     |
-          | ccache hit rate  | $(ccache --show-stats | grep -oP 'Hits:\s+\K[0-9.]+' | head -1)%  |
+          
+          | Field            | Value                                                          |
+          |------------------|----------------------------------------------------------------|
+          | Kernel           | Linux ${FULL_VERSION}                                          |
+          | Hyperion ver     | ${HYPERION_VER}                                                |
+          | Release tag      | ${TAG_NAME}                                                    |
+          | Build time       | ${BUILD_MIN}m ${BUILD_SEC}s                                    |
+          | CPUs used        | $(nproc)                                                       |
+          | bzImage size     | $(du -sh build/arch/x86/boot/bzImage | cut -f1)                |
+          | Kernel tar size  | $(du -sh "Hyperion-Kernel-${FULL_VERSION}.tar.zst" | cut -f1)  |
+          | Modules tar size | $(du -sh "Hyperion-Modules-${FULL_VERSION}.tar.zst" | cut -f1) |
+          | ccache hit rate  | ${CCACHE_HIT_RATE}%                                            |
           EOF
 
       - name: Create GitHub Release
@@ -241,6 +246,7 @@ jobs:
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: Hyperion ${{ env.HYPERION_VER }} based on Linux ${{ env.FULL_VERSION }}
+          generate_release_notes: true
           files: |
             Hyperion-Kernel-${{ env.FULL_VERSION }}.tar.zst
             Hyperion-Modules-${{ env.FULL_VERSION }}.tar.zst
@@ -248,3 +254,4 @@ jobs:
             Hyperion-${{ env.FULL_VERSION }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
