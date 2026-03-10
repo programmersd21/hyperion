@@ -17,7 +17,7 @@ gzip
 
 echo "[1/7] Cleaning previous build..."
 
-sudo rm -rf "$WORKDIR"
+rm -rf "$WORKDIR"
 mkdir -p "$WORKDIR"
 cd "$WORKDIR"
 
@@ -38,7 +38,7 @@ root
 
 echo "[3/7] Installing BusyBox..."
 
-cp /bin/busybox bin/busybox
+cp /bin/busybox bin/
 
 echo "[4/7] Enabling ALL BusyBox commands..."
 
@@ -49,15 +49,15 @@ cd ..
 echo "[5/7] Creating init script..."
 
 cat << 'EOF' > init
-#!/bin/sh
+#!/bin/busybox sh
 
 echo
 echo "Hyperion Initramfs Booting..."
 echo
 
-mount -t proc none /proc
-mount -t sysfs none /sys
-mount -t devtmpfs none /dev
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
 
 echo
 echo "Welcome to Hyperion Kernel!"
@@ -70,12 +70,14 @@ chmod +x init
 
 echo "[6/7] Creating device nodes..."
 
-sudo mknod -m 622 dev/console c 5 1 2>/dev/null || true
-sudo mknod -m 666 dev/null c 1 3 2>/dev/null || true
+sudo mknod -m 600 dev/console c 5 1 || true
+sudo mknod -m 666 dev/null c 1 3 || true
 
 echo "[7/7] Packing initramfs..."
 
-find . -print0 | cpio --null -ov --format=newc 2>/dev/null | gzip > "$OUTFILE"
+find . -print0 \
+| cpio --null -ov --format=newc --owner root:root 2>/dev/null \
+| gzip -9 > "$OUTFILE"
 
 echo
 echo "=== Done! ==="
