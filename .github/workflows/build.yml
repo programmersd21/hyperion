@@ -18,6 +18,9 @@ jobs:
       EXTRA: ${{ steps.parse-config.outputs.EXTRA }}
       LOCAL: ${{ steps.parse-config.outputs.LOCAL }}
       TAG: ${{ steps.parse-config.outputs.TAG }}
+      # FIX 2: expose the correctly assembled full kernel version (e.g. "6.14" or "6.14.2")
+      FULL_VERSION: ${{ steps.parse-config.outputs.FULL_VERSION }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,43 +28,49 @@ jobs:
         id: parse-config
         run: |
           python3 - << 'EOF'
-          import sys
+          import sys, os
 
           config = {}
           with open('hyperion.config') as f:
               for line in f:
-                  line=line.strip()
+                  line = line.strip()
                   if not line or line.startswith('#'): continue
                   if '=' not in line:
                       print(f"Invalid line: {line}")
                       sys.exit(1)
-                  k,v = line.split('=',1)
+                  k, v = line.split('=', 1)
                   config[k.strip()] = v.strip().strip('"')
 
           def parse_int(k, d=0):
-              val = config.get(k,'')
-              if val=='': return d
+              val = config.get(k, '')
+              if val == '': return d
               try:
-                  iv = int(val)
-                  return iv
+                  return int(val)
               except ValueError:
                   print(f"Invalid {k}: {val}"); sys.exit(1)
 
           VERSION = parse_int('CONFIG_VERSION')
-          PATCH = parse_int('CONFIG_PATCHLEVEL')
-          SUB   = parse_int('CONFIG_SUBLEVEL')
-          EXTRA = config.get('CONFIG_EXTRAVERSION','') or ''
-          LOCAL = config.get('CONFIG_LOCALVERSION','') or ''
+          PATCH   = parse_int('CONFIG_PATCHLEVEL')
+          SUB     = parse_int('CONFIG_SUBLEVEL')
+          EXTRA   = config.get('CONFIG_EXTRAVERSION', '') or ''
+          LOCAL   = config.get('CONFIG_LOCALVERSION', '') or ''
+
+          # FIX 2: kernel.org omits ".0" sublevel in the tarball name
+          FULL_VERSION = f"{VERSION}.{PATCH}" if SUB == 0 else f"{VERSION}.{PATCH}.{SUB}"
 
           tag_suffix = LOCAL.split('-Hyperion-')[-1] if '-Hyperion-' in LOCAL else LOCAL
           TAG = f"v{VERSION}.{PATCH}.{SUB}{tag_suffix}"
 
-          print(f"::set-output name=VERSION::{VERSION}")
-          print(f"::set-output name=PATCH::{PATCH}")
-          print(f"::set-output name=SUB::{SUB}")
-          print(f"::set-output name=EXTRA::{EXTRA}")
-          print(f"::set-output name=LOCAL::{LOCAL}")
-          print(f"::set-output name=TAG::{TAG}")
+          # FIX 1: use $GITHUB_OUTPUT instead of deprecated ::set-output
+          out = os.environ['GITHUB_OUTPUT']
+          with open(out, 'a') as f:
+              f.write(f"VERSION={VERSION}\n")
+              f.write(f"PATCH={PATCH}\n")
+              f.write(f"SUB={SUB}\n")
+              f.write(f"EXTRA={EXTRA}\n")
+              f.write(f"LOCAL={LOCAL}\n")
+              f.write(f"TAG={TAG}\n")
+              f.write(f"FULL_VERSION={FULL_VERSION}\n")
           EOF
 
   build-kernel:
@@ -69,12 +78,14 @@ jobs:
     needs: validate-config
     runs-on: ubuntu-latest
     env:
-      KERNEL_VERSION: ${{ needs.validate-config.outputs.VERSION }}
-      PATCHLEVEL: ${{ needs.validate-config.outputs.PATCH }}
-      SUBLEVEL: ${{ needs.validate-config.outputs.SUB }}
-      EXTRAVERSION: ${{ needs.validate-config.outputs.EXTRA }}
-      LOCALVERSION: ${{ needs.validate-config.outputs.LOCAL }}
-      TAG_NAME: ${{ needs.validate-config.outputs.TAG }}
+      KERNEL_VERSION:  ${{ needs.validate-config.outputs.VERSION }}
+      PATCHLEVEL:      ${{ needs.validate-config.outputs.PATCH }}
+      SUBLEVEL:        ${{ needs.validate-config.outputs.SUB }}
+      EXTRAVERSION:    ${{ needs.validate-config.outputs.EXTRA }}
+      LOCALVERSION:    ${{ needs.validate-config.outputs.LOCAL }}
+      TAG_NAME:        ${{ needs.validate-config.outputs.TAG }}
+      # FIX 2: single source of truth for the full kernel version used in all paths
+      FULL_VERSION:    ${{ needs.validate-config.outputs.FULL_VERSION }}
       KBUILD_BUILD_USER: Soumalya Das
       KBUILD_BUILD_HOST: hyperion-ci
 
@@ -95,31 +106,33 @@ jobs:
         id: cache-tar
         uses: actions/cache@v4
         with:
-          path: linux-${{ env.KERNEL_VERSION }}.tar.xz
-          key: kernel-tar-${{ env.KERNEL_VERSION }}
+          # FIX 2: use FULL_VERSION so the filename matches what kernel.org actually serves
+          path: linux-${{ env.FULL_VERSION }}.tar.xz
+          key: kernel-tar-${{ env.FULL_VERSION }}
 
       - name: Restore build cache
         id: cache-build
         uses: actions/cache@v4
         with:
-          path: .cache-build/linux-${{ env.KERNEL_VERSION }}
-          key: kernel-build-${{ env.KERNEL_VERSION }}-hyperion-${{ hashFiles('hyperion.config') }}
+          path: .cache-build/linux-${{ env.FULL_VERSION }}
+          key: kernel-build-${{ env.FULL_VERSION }}-hyperion-${{ hashFiles('hyperion.config') }}
           restore-keys: |
-            kernel-build-${{ env.KERNEL_VERSION }}-
+            kernel-build-${{ env.FULL_VERSION }}-
 
       - name: Download kernel source if missing
         if: steps.cache-tar.outputs.cache-hit != 'true'
-        run: wget -q https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${{ env.KERNEL_VERSION }}.tar.xz
+        # FIX 2: URL uses FULL_VERSION (e.g. linux-6.14.tar.xz), not bare major version
+        run: wget -q https://cdn.kernel.org/pub/linux/kernel/v${{ env.KERNEL_VERSION }}.x/linux-${{ env.FULL_VERSION }}.tar.xz
 
       - name: Prepare build tree safely
         run: |
           mkdir -p .cache-build
           cd .cache-build
-          if [ ! -d "linux-${KERNEL_VERSION}" ]; then
-            tar -xf ../linux-${KERNEL_VERSION}.tar.xz
-            EXTRACTED_DIR=$(tar -tf ../linux-${KERNEL_VERSION}.tar.xz | head -1 | cut -f1 -d"/")
-            if [ "$EXTRACTED_DIR" != "linux-${KERNEL_VERSION}" ]; then
-              mv "$EXTRACTED_DIR" "linux-${KERNEL_VERSION}"
+          if [ ! -d "linux-${FULL_VERSION}" ]; then
+            tar -xf ../linux-${FULL_VERSION}.tar.xz
+            EXTRACTED_DIR=$(tar -tf ../linux-${FULL_VERSION}.tar.xz | head -1 | cut -f1 -d"/")
+            if [ "$EXTRACTED_DIR" != "linux-${FULL_VERSION}" ]; then
+              mv "$EXTRACTED_DIR" "linux-${FULL_VERSION}"
             fi
           fi
           cd ..
@@ -133,7 +146,7 @@ jobs:
 
       - name: Configure kernel
         run: |
-          cd .cache-build/linux-${KERNEL_VERSION}
+          cd .cache-build/linux-${FULL_VERSION}
           cp ../../hyperion.config .config
           make olddefconfig \
             LOCALVERSION="${LOCALVERSION}" \
@@ -142,14 +155,22 @@ jobs:
 
       - name: Apply patches
         run: |
-          cd .cache-build/linux-${KERNEL_VERSION}
-          for p in ../../patches/*.patch 2>/dev/null; do
-            git apply "$p" || patch -p1 < "$p"
-          done || true
+          # FIX 3: nullglob prevents the literal glob string being passed when no patches exist
+          shopt -s nullglob
+          PATCHES=(../../patches/*.patch)
+          if [ ${#PATCHES[@]} -gt 0 ]; then
+            cd .cache-build/linux-${FULL_VERSION}
+            for p in "${PATCHES[@]}"; do
+              echo "Applying patch: $p"
+              git apply "$p" || patch -p1 < "$p"
+            done
+          else
+            echo "No patches to apply."
+          fi
 
       - name: Build kernel and prepend banner to build.log
         run: |
-          cd .cache-build/linux-${KERNEL_VERSION}
+          cd .cache-build/linux-${FULL_VERSION}
           {
             echo " ██╗  ██╗██╗   ██╗██████╗ ███████╗██████╗ ██╗ ██████╗ ███╗   ██╗"
             echo " ██║  ██║╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██║██╔═══██╗████╗  ██║"
@@ -162,36 +183,36 @@ jobs:
               LOCALVERSION="${LOCALVERSION}" \
               KBUILD_BUILD_USER="${KBUILD_BUILD_USER}" \
               KBUILD_BUILD_HOST="${KBUILD_BUILD_HOST}" \
-              KBUILD_BUILD_TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S')" 
+              KBUILD_BUILD_TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S')"
           } 2>&1 | tee build.log
 
       - name: Package artifacts into .tar.zst
         run: |
-          cd .cache-build/linux-${KERNEL_VERSION}
-          tar --zstd -cf ../../Hyperion-Kernel-${KERNEL_VERSION}.tar.zst \
+          cd .cache-build/linux-${FULL_VERSION}
+          # FIX 6: copy hyperion.config into the build dir so tar stores it without a "../../" prefix
+          cp ../../hyperion.config hyperion.config
+          tar --zstd -cf ../../Hyperion-Kernel-${FULL_VERSION}.tar.zst \
             arch/x86/boot/bzImage \
             Module.symvers \
             build.log \
-            ../../hyperion.config
+            hyperion.config
 
       - name: Generate checksum
         run: |
-          sha256sum Hyperion-Kernel-${KERNEL_VERSION}.tar.zst > Hyperion-Kernel-${KERNEL_VERSION}.sha256
+          sha256sum Hyperion-Kernel-${FULL_VERSION}.tar.zst > Hyperion-Kernel-${FULL_VERSION}.sha256
 
-      - name: Create GitHub Release
+      # FIX 5: merged into a single release step — creating then uploading in two calls
+      # is redundant and risks a race where the second call targets a non-existent release.
+      # FIX 4: use ${{ env.FULL_VERSION }} (Actions expression syntax) in the with: block,
+      # because shell variables like ${FULL_VERSION} are NOT expanded in YAML with: values.
+      - name: Create GitHub Release and upload artifacts
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
           name: Linux ${{ env.TAG_NAME }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload compressed archive & checksum
-        uses: softprops/action-gh-release@v2
-        with:
           files: |
-            Hyperion-Kernel-${KERNEL_VERSION}.tar.zst
-            Hyperion-Kernel-${KERNEL_VERSION}.sha256
+            Hyperion-Kernel-${{ env.FULL_VERSION }}.tar.zst
+            Hyperion-Kernel-${{ env.FULL_VERSION }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
