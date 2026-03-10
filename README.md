@@ -11,13 +11,29 @@
             Linux 6.19.6 · Optimised · Stable · Developer-Friendly
 ```
 
-**Author:** Soumalya Das &nbsp;|&nbsp; **License:** MIT &nbsp;|&nbsp; **Base:** Linux 6.19.6 LTS &nbsp;|&nbsp; **Year:** 2026
+<img src="icon/icon.png" alt="Hyperion Kernel Icon" width="120" style="margin: 10px; border-radius: 10px;">
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=flat-square&label=Kernel%20Build)](https://github.com/pro-grammer-SD/hyperion/actions)
-[![Kernel Version](https://img.shields.io/badge/kernel-6.19.6--Hyperion--0.1.2-blue?style=flat-square)](https://kernel.org)
-[![Architecture](https://img.shields.io/badge/arch-x86__64-green?style=flat-square)](#supported-architectures)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![DKMS Compatible](https://img.shields.io/badge/DKMS-Compatible-brightgreen?style=flat-square)](#dkms-compatibility)
+<p style="font-size:0.95em;">
+<strong>Author:</strong> Soumalya Das &nbsp;|&nbsp; <strong>License:</strong> MIT &nbsp;|&nbsp; <strong>Base:</strong> Linux 6.19.6 &nbsp;|&nbsp; <strong>Year:</strong> 2026
+</p>
+
+<p>
+<a href="https://github.com/pro-grammer-SD/hyperion/actions">
+<img src="https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
+</a>
+<a href="https://kernel.org">
+<img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--0.1.2-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
+</a>
+<a href="#supported-architectures">
+<img src="https://img.shields.io/badge/arch-x86__64-green?style=for-the-badge&color=f9a825" alt="Architecture">
+</a>
+<a href="LICENSE">
+<img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge&color=ffb300" alt="License: MIT">
+</a>
+<a href="#dkms-compatibility">
+<img src="https://img.shields.io/badge/DKMS-Compatible-brightgreen?style=for-the-badge&color=8e24aa" alt="DKMS Compatible">
+</a>
+</p>
 
 </div>
 
@@ -44,7 +60,7 @@
 
 ## Overview
 
-**Hyperion Kernel** is a custom Linux 6.19.6 LTS kernel build engineered for three primary goals: **maximum performance**, **rock-solid stability**, and **complete developer friendliness**. It ships a carefully curated configuration drawing from the best practices of CachyOS, XanMod, Nobara (Fedora Gaming), Liquorix, and upstream Linux, combined with targeted patches and a guarantee that kernel headers, DKMS modules, and external module builds just work — every single time.
+**Hyperion Kernel** is a custom Linux 6.19.6 kernel build engineered for three primary goals: **maximum performance**, **rock-solid stability**, and **complete developer friendliness**. It ships a carefully curated configuration drawing from the best practices of CachyOS, XanMod, Nobara (Fedora Gaming), Liquorix, and upstream Linux, combined with targeted patches and a guarantee that kernel headers, DKMS modules, and external module builds just work — every single time.
 
 Hyperion is designed for:
 - Power users, gamers, and developers who demand low latency and high throughput
