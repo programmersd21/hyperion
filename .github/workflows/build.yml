@@ -18,6 +18,7 @@ jobs:
       EXTRA: ${{ steps.parse-config.outputs.EXTRA }}
       LOCAL: ${{ steps.parse-config.outputs.LOCAL }}
       TAG: ${{ steps.parse-config.outputs.TAG }}
+      HYPERION_VER: ${{ steps.parse-config.outputs.HYPERION_VER }}
       # FIX 2: expose the correctly assembled full kernel version (e.g. "6.14" or "6.14.2")
       FULL_VERSION: ${{ steps.parse-config.outputs.FULL_VERSION }}
 
@@ -58,8 +59,11 @@ jobs:
           # FIX 2: kernel.org omits ".0" sublevel in the tarball name
           FULL_VERSION = f"{VERSION}.{PATCH}" if SUB == 0 else f"{VERSION}.{PATCH}.{SUB}"
 
-          tag_suffix = LOCAL.split('-Hyperion-')[-1] if '-Hyperion-' in LOCAL else LOCAL
-          TAG = f"v{VERSION}.{PATCH}.{SUB}{tag_suffix}"
+          # Extract the Hyperion version (e.g. "0.1.0") from LOCAL ("-Hyperion-0.1.0")
+          HYPERION_VER = LOCAL.split('-Hyperion-', 1)[-1] if '-Hyperion-' in LOCAL else LOCAL.lstrip('-')
+
+          # Release tag is just the Hyperion version: "0.1.0"
+          TAG = HYPERION_VER
 
           # FIX 1: use $GITHUB_OUTPUT instead of deprecated ::set-output
           out = os.environ['GITHUB_OUTPUT']
@@ -70,6 +74,7 @@ jobs:
               f.write(f"EXTRA={EXTRA}\n")
               f.write(f"LOCAL={LOCAL}\n")
               f.write(f"TAG={TAG}\n")
+              f.write(f"HYPERION_VER={HYPERION_VER}\n")
               f.write(f"FULL_VERSION={FULL_VERSION}\n")
           EOF
 
@@ -84,6 +89,7 @@ jobs:
       EXTRAVERSION:    ${{ needs.validate-config.outputs.EXTRA }}
       LOCALVERSION:    ${{ needs.validate-config.outputs.LOCAL }}
       TAG_NAME:        ${{ needs.validate-config.outputs.TAG }}
+      HYPERION_VER:    ${{ needs.validate-config.outputs.HYPERION_VER }}
       # FIX 2: single source of truth for the full kernel version used in all paths
       FULL_VERSION:    ${{ needs.validate-config.outputs.FULL_VERSION }}
       KBUILD_BUILD_USER: Soumalya Das
@@ -209,7 +215,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
-          name: Linux ${{ env.TAG_NAME }}
+          name: Hyperion ${{ env.HYPERION_VER }} based on Linux ${{ env.FULL_VERSION }}
           files: |
             Hyperion-Kernel-${{ env.FULL_VERSION }}.tar.zst
             Hyperion-Kernel-${{ env.FULL_VERSION }}.sha256
