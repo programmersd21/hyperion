@@ -64,7 +64,7 @@ jobs:
           # kernel.org omits ".0" sublevel: linux-6.19.tar.xz not linux-6.19.0.tar.xz
           FULL_VERSION = f"{VERSION}.{PATCH}" if SUB == 0 else f"{VERSION}.{PATCH}.{SUB}"
 
-          # Extract Hyperion semver from LOCAL ("-Hyperion-0.1.0" -> "0.1.0")
+          # Extract Hyperion semver from LOCAL ("-Hyperion-0.1.1" -> "0.1.1")
           HYPERION_VER = LOCAL.split('-Hyperion-', 1)[-1] if '-Hyperion-' in LOCAL else LOCAL.lstrip('-')
 
           TAG = HYPERION_VER

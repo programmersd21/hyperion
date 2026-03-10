@@ -14,7 +14,7 @@
 **Author:** Soumalya Das &nbsp;|&nbsp; **License:** MIT &nbsp;|&nbsp; **Base:** Linux 6.19.6 LTS &nbsp;|&nbsp; **Year:** 2026
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=flat-square&label=Kernel%20Build)](https://github.com/pro-grammer-SD/hyperion/actions)
-[![Kernel Version](https://img.shields.io/badge/kernel-6.19.6--Hyperion--0.1.0-blue?style=flat-square)](https://kernel.org)
+[![Kernel Version](https://img.shields.io/badge/kernel-6.19.6--Hyperion--0.1.1-blue?style=flat-square)](https://kernel.org)
 [![Architecture](https://img.shields.io/badge/arch-x86__64-green?style=flat-square)](#supported-architectures)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![DKMS Compatible](https://img.shields.io/badge/DKMS-Compatible-brightgreen?style=flat-square)](#dkms-compatibility)
@@ -53,8 +53,8 @@ Hyperion is designed for:
 - Developers building and testing kernel modules without fighting header or symbol versioning issues
 
 ```
-uname -r  →  6.19.6-Hyperion-0.1.0
-uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.1.0 (Soumalya Das) 2026
+uname -r  →  6.19.6-Hyperion-0.1.1
+uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.1.1 (Soumalya Das) 2026
 ```
 
 ---
@@ -76,7 +76,7 @@ Hyperion is built on four principles:
 
 | Category | Feature | Details |
 |---|---|---|
-| **Identity** | Custom branding | `uname -r` → `6.19.6-Hyperion-0.1.0` |
+| **Identity** | Custom branding | `uname -r` → `6.19.6-Hyperion-0.1.1` |
 | **Scheduler** | Full preemption | `CONFIG_PREEMPT=y` — lowest latency desktop |
 | **Scheduler** | Autogroup | `CONFIG_SCHED_AUTOGROUP=y` — session-aware scheduling |
 | **Timer** | 1000 Hz tick | `CONFIG_HZ_1000=y` — 1ms granularity |
@@ -135,8 +135,8 @@ Hyperion is built on four principles:
 Hyperion treats module compatibility as a **first-class feature**, not an afterthought.
 
 **What this means in practice:**
-- Kernel headers are installed to `/usr/src/linux-headers-6.19.6-Hyperion-0.1.0/`
-- The build symlink `/lib/modules/6.19.6-Hyperion-0.1.0/build` always points to the correct headers directory
+- Kernel headers are installed to `/usr/src/linux-headers-6.19.6-Hyperion-0.1.1/`
+- The build symlink `/lib/modules/6.19.6-Hyperion-0.1.1/build` always points to the correct headers directory
 - `CONFIG_IKHEADERS=y` makes headers available at `/sys/kernel/kheaders.tar.xz` as a runtime fallback
 - `CONFIG_MODVERSIONS=y` means every exported symbol carries a CRC checksum — mismatched modules are rejected cleanly at `insmod` with a clear error, not a kernel panic
 - `CONFIG_MODULE_SRCVERSION_ALL=y` embeds a srcversion hash in every module for traceability
@@ -219,7 +219,7 @@ make olddefconfig
 make menuconfig
 
 # 5. Build (use all cores)
-make -j$(nproc) LOCALVERSION="-Hyperion-0.1.0"
+make -j$(nproc) LOCALVERSION="-Hyperion-0.1.1"
 
 # 6. Build modules
 make modules -j$(nproc)
@@ -257,14 +257,14 @@ sudo reboot
 
 # Verify identity
 uname -r
-# Expected: 6.19.6-Hyperion-0.1.0
+# Expected: 6.19.6-Hyperion-0.1.1
 
 uname -v
-# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.1.0 (Soumalya Das) 2026
+# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.1.1 (Soumalya Das) 2026
 
 # Verify headers symlink
 ls -la /lib/modules/$(uname -r)/build
-# Should point to /usr/src/linux-headers-6.19.6-Hyperion-0.1.0
+# Should point to /usr/src/linux-headers-6.19.6-Hyperion-0.1.1
 
 # Test DKMS
 sudo dkms status
@@ -279,7 +279,7 @@ sudo modprobe zram
 ```bash
 sudo apt install v4l2loopback-dkms   # or your distro equivalent
 sudo dkms status
-# v4l2loopback/0.12.x, 6.19.6-Hyperion-0.1.0, x86_64: installed
+# v4l2loopback/0.12.x, 6.19.6-Hyperion-0.1.1, x86_64: installed
 ```
 
 ---

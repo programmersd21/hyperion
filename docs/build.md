@@ -92,7 +92,7 @@ done
 ```bash
 # Build the kernel image, modules, and DTBs
 # Use all available CPU cores for maximum speed
-make -j$(nproc) LOCALVERSION="-Hyperion-0.1.0" 2>&1 | tee build.log
+make -j$(nproc) LOCALVERSION="-Hyperion-0.1.1" 2>&1 | tee build.log
 
 # Build modules only
 make modules -j$(nproc)
@@ -137,10 +137,10 @@ sudo reboot
 
 ```bash
 uname -r
-# Expected: 6.19.6-Hyperion-0.1.0
+# Expected: 6.19.6-Hyperion-0.1.1
 
 uname -v
-# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.1.0 (Soumalya Das) 2026
+# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-0.1.1 (Soumalya Das) 2026
 
 # Verify headers symlink exists
 ls -la /lib/modules/$(uname -r)/build
