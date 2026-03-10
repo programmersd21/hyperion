@@ -1,0 +1,139 @@
+name: Hyperion Kernel Build CI
+
+on:
+  workflow_dispatch:
+
+env:
+  KERNEL_VERSION: "6.19.6"
+  HYPERION_VERSION: "0.1.0"
+  KBUILD_BUILD_USER: "Soumalya Das"
+  KBUILD_BUILD_HOST: "hyperion-ci"
+
+permissions:
+  contents: write  # required for releases
+  actions: write
+
+jobs:
+  validate-config:
+    name: Validate Hyperion Config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate config
+        run: |
+          python3 - << 'EOF'
+          with open('hyperion.config') as f: lines = f.readlines()
+          errs = []
+          for i, l in enumerate(lines,1):
+            l=l.strip()
+            if not l or l.startswith('#'): continue
+            if '=' not in l: errs.append(f"Line {i}: No '=': {l}")
+            elif not l.startswith('CONFIG_'): errs.append(f"Line {i}: needs CONFIG_: {l}")
+          if errs:
+            printf='%s\n'; exit(1)
+          print(f"Config OK")
+          EOF
+
+  build-kernel:
+    name: Build Linux ${{ env.KERNEL_VERSION }}-Hyperion-${{ env.HYPERION_VERSION }}
+    runs-on: ubuntu-latest
+    needs: validate-config
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache kernel source tarball
+        id: cache-tar
+        uses: actions/cache@v4
+        with:
+          path: linux-${{ env.KERNEL_VERSION }}.tar.xz
+          key: kernel-tar-${{ env.KERNEL_VERSION }}
+
+      - name: Cache extracted kernel source
+        id: cache-src
+        uses: actions/cache@v4
+        with:
+          path: linux-${{ env.KERNEL_VERSION }}
+          key: kernel-src-${{ env.KERNEL_VERSION }}
+
+      - name: Cache kernel build objects
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache-build/linux-${{ env.KERNEL_VERSION }}
+          key: kernel-build-${{ env.KERNEL_VERSION }}-${{ hashFiles('hyperion.config') }}
+          restore-keys: |
+            kernel-build-${{ env.KERNEL_VERSION }}-
+
+      - name: Fetch kernel source
+        if: steps.cache-tar.outputs.cache-hit != 'true'
+        run: wget -q https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-${{ env.KERNEL_VERSION }}.tar.xz
+
+      - name: Extract kernel source
+        if: steps.cache-src.outputs.cache-hit != 'true'
+        run: tar -xf linux-${{ env.KERNEL_VERSION }}.tar.xz
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libncurses-dev bison flex libssl-dev libelf-dev \
+            dwarves bc pahole git make gcc xz-utils zstd cpio perl tar rsync
+
+      - name: Configure kernel
+        run: |
+          mkdir -p .cache-build/linux-${{ env.KERNEL_VERSION }}
+          rsync -a linux-${{ env.KERNEL_VERSION }}/ .cache-build/linux-${{ env.KERNEL_VERSION }}/
+          cd .cache-build/linux-${{ env.KERNEL_VERSION }}
+          cp ../../hyperion.config .config
+          make olddefconfig \
+            LOCALVERSION="-Hyperion-${{ env.HYPERION_VERSION }}" \
+            KBUILD_BUILD_USER="${{ env.KBUILD_BUILD_USER }}" \
+            KBUILD_BUILD_HOST="${{ env.KBUILD_BUILD_HOST }}"
+
+      - name: Apply patches
+        run: |
+          cd .cache-build/linux-${{ env.KERNEL_VERSION }}
+          for p in ../patches/*.patch 2>/dev/null; do
+            git apply "$p" || patch -p1 < "$p"
+          done || true
+
+      - name: Build kernel
+        run: |
+          cd .cache-build/linux-${{ env.KERNEL_VERSION }}
+          make -j$(nproc) \
+            LOCALVERSION="-Hyperion-${{ env.HYPERION_VERSION }}" \
+            KBUILD_BUILD_USER="${{ env.KBUILD_BUILD_USER }}" \
+            KBUILD_BUILD_HOST="${{ env.KBUILD_BUILD_HOST }}" \
+            KBUILD_BUILD_TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S')" \
+            2>&1 | tee build.log
+
+      - name: Verify image
+        run: |
+          ls -lh .cache-build/linux-${{ env.KERNEL_VERSION }}/arch/x86/boot/bzImage
+          strings .cache-build/linux-${{ env.KERNEL_VERSION }}/arch/x86/boot/bzImage | grep "Hyperion"
+
+      - name: Create/GH Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.KERNEL_VERSION }}-Hyperion-${{ env.HYPERION_VERSION }}
+          name: Linux ${ env.KERNEL_VERSION }-Hyperion-${{ env.HYPERION_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload bzImage
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .cache-build/linux-${{ env.KERNEL_VERSION }}/arch/x86/boot/bzImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Module.symvers
+        uses: softprops/action-gh-release@v2
+        with:
+          files: .cache-build/linux-${{ env.KERNEL_VERSION }}/Module.symvers
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
