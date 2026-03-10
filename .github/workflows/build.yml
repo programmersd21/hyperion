@@ -105,22 +105,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ env.FULL_VERSION }}-${{ github.sha }}
-          restore-keys: ccache-${{ env.FULL_VERSION }}-
+          key: ccache-${{ env.FULL_VERSION }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ env.FULL_VERSION }}-
+            ccache-
 
       - name: Restore kernel build
         uses: actions/cache@v4
         with:
           path: build
           key: kernel-build-${{ env.FULL_VERSION }}-${{ hashFiles('hyperion.config') }}
-          restore-keys: kernel-build-${{ env.FULL_VERSION }}-
+          restore-keys: |
+            kernel-build-${{ env.FULL_VERSION }}-
+            kernel-build-
 
       - name: Restore kernel source
         uses: actions/cache@v4
         with:
           path: build-src
           key: kernel-src-${{ env.FULL_VERSION }}
-          restore-keys: kernel-src-${{ env.FULL_VERSION }}-
+          restore-keys: |
+            kernel-src-${{ env.KERNEL_VERSION }}.${{ env.PATCHLEVEL }}.
+            kernel-src-
 
       - name: Install build dependencies
         run: |
@@ -160,13 +166,23 @@ jobs:
           PATCHES=(patches/*.patch)
           if [ ${#PATCHES[@]} -gt 0 ]; then
             cd "build-src/linux-${FULL_VERSION}"
-            for p in "${PATCHES[@]}"; do
-              patch -p1 < "../../$p"
+            for p in ../../patches/*.patch; do
+              # Check if patch is already applied (for cached source trees)
+              if patch -p1 --dry-run -R < "$p" &>/dev/null; then
+                echo "Patch $(basename $p) already applied, skipping"
+              else
+                echo "Applying patch $(basename $p)"
+                patch -p1 < "$p"
+              fi
             done
           fi
 
       - name: Configure kernel
         run: |
+          # Clean source tree if it exists (handles cached sources)
+          if [ -d "build-src/linux-${FULL_VERSION}" ]; then
+            make -C "build-src/linux-${FULL_VERSION}" mrproper
+          fi
           cp hyperion.config "build-src/linux-${FULL_VERSION}/.config"
           make -C "build-src/linux-${FULL_VERSION}" O="$(pwd)/build" olddefconfig \
             LOCALVERSION="${LOCALVERSION}" \
