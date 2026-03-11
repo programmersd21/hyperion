@@ -278,7 +278,7 @@ Hyperion treats module compatibility as a **first-class feature**, not an aftert
 |---|---|---|
 | `x86_64` | ✅ **Fully supported** | Primary target, fully optimised |
 | `i686` | ❌ Not supported | 32-bit dropped |
-| `aarch64` | 🔜 Planned | Config work in progress |
+| `aarch64` | ❌ Not planned anymore | ~~Config work in progress~~ |
 
 ---
 
