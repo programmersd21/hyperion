@@ -402,6 +402,8 @@ chmod +x ./scripts/generate-initramfs.sh
 ./scripts/generate-initramfs.sh
 ```
 
+A prebuilt one is attached in the release assets of v0.1.1
+
 ### Installing a DKMS Module (example: v4l2loopback)
 
 ```bash
