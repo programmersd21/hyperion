@@ -48,7 +48,7 @@
 - [What's New in v2.2.0](#whats-new-in-v220)
   - [v2.2.0 — USB Stability & Autosuspend Elimination](#v220--usb-stability--autosuspend-elimination)
   - [v2.1.0 — Precision Tuning Pass](#v210--precision-tuning-pass)
-  - [v2.0.2 — Universal Daily-Driver Pass](#v202--universal-daily-driver-pass)
+  - [v2.2.0 — Universal Daily-Driver Pass](#v202--universal-daily-driver-pass)
 - [Philosophy](#philosophy)
 - [Key Features](#key-features)
 - [Monolithic Architecture](#monolithic-architecture)
@@ -183,7 +183,7 @@ uname -v  ->  #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.0 (Soumalya Das) 2026
 
 ---
 
-### v2.0.2 — Universal Daily-Driver Pass
+### v2.2.0 — Universal Daily-Driver Pass
 
 > 39 new config groups, 5 new subsystems, full distro compatibility. Full changelog below for reference.
 

@@ -61,29 +61,29 @@ ls /boot/loader/entries/
 
 **Symptom:**
 ```
-Error! Bad return status for module build on kernel: 6.19.6-Hyperion-2.0.2
+Error! Bad return status for module build on kernel: 6.19.6-Hyperion-2.2.0
 ```
 
 **Step 1: Check if headers exist**
 ```bash
-ls /usr/src/linux-headers-6.19.6-Hyperion-2.0.2/
+ls /usr/src/linux-headers-6.19.6-Hyperion-2.2.0/
 # If empty or missing → run install-headers.sh
 sudo bash /path/to/hyperion/scripts/install-headers.sh
 ```
 
 **Step 2: Verify build symlink**
 ```bash
-readlink /lib/modules/6.19.6-Hyperion-2.0.2/build
-# Must point to /usr/src/linux-headers-6.19.6-Hyperion-2.0.2
+readlink /lib/modules/6.19.6-Hyperion-2.2.0/build
+# Must point to /usr/src/linux-headers-6.19.6-Hyperion-2.2.0
 
 # Fix if wrong:
-sudo ln -sfn /usr/src/linux-headers-6.19.6-Hyperion-2.0.2 \
-    /lib/modules/6.19.6-Hyperion-2.0.2/build
+sudo ln -sfn /usr/src/linux-headers-6.19.6-Hyperion-2.2.0 \
+    /lib/modules/6.19.6-Hyperion-2.2.0/build
 ```
 
 **Step 3: Try building DKMS module manually**
 ```bash
-sudo dkms build -m nvidia -v 550.54.14 -k 6.19.6-Hyperion-2.0.2 --verbose
+sudo dkms build -m nvidia -v 550.54.14 -k 6.19.6-Hyperion-2.2.0 --verbose
 ```
 
 **Step 4: Check module build log**
@@ -98,7 +98,7 @@ cat /var/lib/dkms/<module>/<version>/build/make.log
 **Symptom:**
 ```
 insmod: ERROR: could not insert module foo.ko: Invalid module format
-dmesg: foo: version magic '6.19.6 ...' should be '6.19.6-Hyperion-2.0.2 ...'
+dmesg: foo: version magic '6.19.6 ...' should be '6.19.6-Hyperion-2.2.0 ...'
 ```
 
 **Cause:** Module was built for a different kernel version  
