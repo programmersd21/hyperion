@@ -231,7 +231,7 @@ jobs:
           shopt -s nullglob
           for patch in ../patches/*.patch; do
             echo "  → applying $(basename "$patch")"
-            patch -p1 < "$patch"
+            patch -p1 --fuzz=5 < "$patch"
           done
 
       # ── Build ──────────────────────────────────────────────────────────────
