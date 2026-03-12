@@ -7,14 +7,14 @@
  ██╔══██║  ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗██║██║   ██║██║╚██╗██║
  ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║
  ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.2.1</strong>
-      <span style="color:#ff6f00;">Linux 2.2.1</span> <span style="color:#e53935;">·</span> <span style="color:#00e676;">Universal</span> <span style="color:#e53935;">·</span> <span style="color:#ffea00;">Stable</span> <span style="color:#e53935;">·</span> <span style="color:#e040fb;">God-Tier Daily Driver</span>
+                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.2.2</strong>
+      <span style="color:#ff6f00;">Linux 2.2.2</span> <span style="color:#e53935;">·</span> <span style="color:#00e676;">Universal</span> <span style="color:#e53935;">·</span> <span style="color:#ffea00;">Stable</span> <span style="color:#e53935;">·</span> <span style="color:#e040fb;">God-Tier Daily Driver</span>
 </pre>
 
 <img src="icon/icon.png" alt="Hyperion Kernel Icon" width="120" style="margin: 10px; border-radius: 10px;">
 
 <p style="font-size:0.95em;">
-<strong>Author:</strong> Soumalya Das &nbsp;|&nbsp; <strong>License:</strong> MIT &nbsp;|&nbsp; <strong>Base:</strong> Linux 2.2.1 &nbsp;|&nbsp; <strong>Year:</strong> 2026
+<strong>Author:</strong> Soumalya Das &nbsp;|&nbsp; <strong>License:</strong> MIT &nbsp;|&nbsp; <strong>Base:</strong> Linux 2.2.2 &nbsp;|&nbsp; <strong>Year:</strong> 2026
 </p>
 
 <p>
@@ -22,7 +22,7 @@
 <img src="https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
 </a>
 <a href="https://kernel.org">
-<img src="https://img.shields.io/badge/kernel-2.2.1--Hyperion--2.2.1-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
+<img src="https://img.shields.io/badge/kernel-2.2.2--Hyperion--2.2.2-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
 </a>
 <a href="#supported-architectures">
 <img src="https://img.shields.io/badge/arch-x86__64-green?style=for-the-badge&color=f9a825" alt="Architecture">
@@ -45,11 +45,11 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [What's New in v2.2.1](#whats-new-in-v221)
-  - [v2.2.1 -- Arch ISO Boot Pipeline & Wayland Graphics Pass](#v221----arch-iso-boot-pipeline--wayland-graphics-pass)
-  - [v2.2.1 -- USB Stability & Autosuspend Elimination](#v221----usb-stability--autosuspend-elimination)
-  - [v2.2.1 -- Precision Tuning Pass](#v210--precision-tuning-pass)
-  - [v2.2.1 -- Universal Daily-Driver Pass](#v202--universal-daily-driver-pass)
+- [What's New in v2.2.2](#whats-new-in-v221)
+  - [v2.2.2 -- Arch ISO Boot Pipeline & Wayland Graphics Pass](#v221----arch-iso-boot-pipeline--wayland-graphics-pass)
+  - [v2.2.2 -- USB Stability & Autosuspend Elimination](#v221----usb-stability--autosuspend-elimination)
+  - [v2.2.2 -- Precision Tuning Pass](#v210--precision-tuning-pass)
+  - [v2.2.2 -- Universal Daily-Driver Pass](#v202--universal-daily-driver-pass)
 - [Philosophy](#philosophy)
 - [Key Features](#key-features)
 - [Monolithic Architecture](#monolithic-architecture)
@@ -90,11 +90,11 @@
 
 ## Overview
 
-**Hyperion Kernel** is a custom Linux 2.2.1 kernel build engineered to be the definitive daily-driver kernel for every kind of Linux user -- gamers, developers, modders, tinkerers, and hobbyists. It combines the best configuration practices from CachyOS, XanMod, Nobara, Liquorix, and upstream Linux into a single, fully integrated, zero-compromise `bzImage`.
+**Hyperion Kernel** is a custom Linux 2.2.2 kernel build engineered to be the definitive daily-driver kernel for every kind of Linux user -- gamers, developers, modders, tinkerers, and hobbyists. It combines the best configuration practices from CachyOS, XanMod, Nobara, Liquorix, and upstream Linux into a single, fully integrated, zero-compromise `bzImage`.
 
-**v2.2.1 is the "Persistent Beast" release** -- a focused pass on USB peripheral stability, low-latency input polling, and sub-millisecond scheduler precision. If you have ever experienced a dropped first keypress after a pause, a USB DAC clicking on resume, a mouse stuttering after two seconds of idle, or a USB audio device silently disconnecting from PipeWire -- this release is the fix. It addresses all of these at every layer from kernel compile-time defaults down to userspace udev rules.
+**v2.2.2 is the "Persistent Beast" release** -- a focused pass on USB peripheral stability, low-latency input polling, and sub-millisecond scheduler precision. If you have ever experienced a dropped first keypress after a pause, a USB DAC clicking on resume, a mouse stuttering after two seconds of idle, or a USB audio device silently disconnecting from PipeWire -- this release is the fix. It addresses all of these at every layer from kernel compile-time defaults down to userspace udev rules.
 
-Hyperion v2.2.1 is designed for:
+Hyperion v2.2.2 is designed for:
 
 - **Gamers** -- PREEMPT, SCHED_HRTICK, sched_ext, UCLAMP, BBR, 1 kHz input polling, zero USB-sleep input drops, and full Waydroid Android gaming
 - **Developers** -- KPROBES, UPROBE_EVENTS, bpftrace/bcc support, LIVEPATCH for zero-downtime CVE fixes, full DKMS compatibility, and KVM with OVMF/UEFI
@@ -103,15 +103,103 @@ Hyperion v2.2.1 is designed for:
 - **Distro-agnostic users** -- SELinux (Fedora/RHEL), AppArmor (Ubuntu/Arch), TOMOYO (openSUSE) all compiled in with zero reconfiguration needed
 
 ```
-uname -r  ->  2.2.1-Hyperion-2.2.1
-uname -v  ->  #1 SMP PREEMPT Linux 2.2.1-Hyperion-2.2.1 (Soumalya Das) 2026
+uname -r  ->  2.2.2-Hyperion-2.2.2
+uname -v  ->  #1 SMP PREEMPT Linux 2.2.2-Hyperion-2.2.2 (Soumalya Das) 2026
 ```
 
 ---
 
-## What's New in v2.2.1
 
-### v2.2.1 -- Arch ISO Boot Pipeline & Wayland Graphics Pass
+## What's New in v2.2.2
+
+### v2.2.2 -- Hardware Integration Pass
+
+> The "built-in for everything you plugged in" release.
+
+v2.2.2 is a targeted hardware integration pass that adds verified,
+production-ready, **built-in** (not DKMS) support for every USB
+device on the Hyperion reference system and adds the RTL8192EU
+802.11n Wi-Fi driver back into the kernel tree after its removal
+from staging in Linux 6.12.
+
+#### RTL8192EU In-Tree Driver (TP-Link TL-WN823N v2/v3)
+
+The RTL8192EU staging driver was removed from mainline Linux in 6.12.
+Hyperion v2.2.2 adds it back as a proper in-tree driver at
+`drivers/net/wireless/realtek/rtl8192eu/`, integrated through the
+patch file `patches/0001-rtl8192eu-add-in-tree-driver.patch`.
+
+| Aspect | Details |
+|---|---|
+| **Location** | `drivers/net/wireless/realtek/rtl8192eu/` |
+| **Kconfig** | `CONFIG_RTL8192EU=y` (built-in) |
+| **Patch** | `patches/0001-rtl8192eu-add-in-tree-driver.patch` |
+| **Firmware** | `rtlwifi/rtl8192eufw.bin` (linux-firmware) |
+| **Devices** | TP-Link TL-WN823N v2/v3, Realtek 0bda:818b, ASUS USB-N13 C1, D-Link DWA-131 E1 |
+| **Standards** | IEEE 802.11b/g/n, 2.4 GHz, 2T2R, 300 Mbps |
+| **API target** | Linux 6.12 -- 6.19 (mac80211 / cfg80211) |
+
+API fixes applied in the patch:
+- `timer_setup()` / `from_timer()` (replaces removed `setup_timer()`)
+- `dev_addr_set()` with backwards compat shim for <5.17
+- Two-arg `access_ok()` (type arg removed in 5.0)
+- `ktime_get_real_ts64()` (replaces removed `do_gettimeofday()`)
+- `ioremap()` (replaces removed `ioremap_nocache()`)
+- Removed `ndo_change_mtu` from ops (kernel handles it in 6.0+)
+
+#### USB Device Coverage (All Built-In)
+
+Every device attached to the Hyperion reference system now has a
+**verified, documented, built-in** driver chain:
+
+| Device | USB ID | Status | Kernel Driver |
+|---|---|---|---|
+| SanDisk Cruzer Blade | 0781:5567 | ✅ Built-in | `usb-storage` → `scsi_disk` |
+| CRS1100 USB Keyboard | 1620:2124 | ✅ Built-in | `usbhid` → `hid-generic` |
+| Holtek Gaming Mouse | 04d9:fc61 | ✅ Built-in | `usbhid` → `hid-generic` |
+| TP-Link TL-WN823N v2/v3 | 2357:6109 | ✅ Built-in via patch | `rtl8192eu` (in-tree) |
+| Logitech Brio 100 | 646d:894c | ✅ Built-in | `uvcvideo` + `snd-usb-audio` |
+| Unknown USB Display | 0145:1001 | 🔍 Best-effort | `drm_udl` / see notes |
+
+#### New Config Entries (v2.2.2)
+
+| Config | Value | Reason |
+|---|---|---|
+| `CONFIG_RTL8192EU` | `y` | RTL8192EU in-tree driver (patch) |
+| `CONFIG_HID_QUIRKS` | `y` | Holtek gaming mouse compatibility |
+| `CONFIG_DRM_UDL` | `y` | DisplayLink USB DRM driver |
+| `CONFIG_FB_DEFERRED_IO` | `y` | USB framebuffer infrastructure |
+| `CONFIG_WIRELESS_EXT` | `y` | Legacy WEXT API (RTL8192EU dependency) |
+| `CONFIG_LIB80211` | `y` | 802.11 crypto library |
+| `CONFIG_LIB80211_CRYPT_TKIP/CCMP/WEP` | `y` | Cipher support for legacy RTL |
+| `CONFIG_MAC80211_RC_MINSTREL` | `y` | Rate control for in-tree RTL driver |
+| `CONFIG_RFKILL_INPUT` | `y` | Hardware Wi-Fi kill switch |
+| `CONFIG_EXTRA_FIRMWARE` | `rtlwifi/...` | Firmware embedded in bzImage |
+
+#### Build Change: Automatic Patch Application
+
+The CI and build scripts already apply all `patches/*.patch` automatically.
+No manual steps are needed — running the standard build sequence will:
+
+1. Extract the kernel source
+2. Apply `0001-rtl8192eu-add-in-tree-driver.patch` via `patch -p1`
+3. Run `make olddefconfig` which picks up `CONFIG_RTL8192EU=y` from `hyperion.config`
+4. Build the RTL8192EU driver directly into the `bzImage`
+
+```bash
+# Full build with RTL8192EU built-in (no extra steps):
+cp hyperion.config .config
+make olddefconfig
+# verify: grep CONFIG_RTL8192EU .config  -> CONFIG_RTL8192EU=y
+make -j$(nproc) LOCALVERSION="-Hyperion-2.2.2"  # builds RTL8192EU as =y bzImage modules
+```
+
+
+---
+
+## What's New in v2.2.2
+
+### v2.2.2 -- Arch ISO Boot Pipeline & Wayland Graphics Pass
 
 > The "make the boot chain complete and provably correct" pass.
 
@@ -146,11 +234,11 @@ Audit result: 36 of 39 options were already correctly set. Three were missing.
 Additionally, this pass added the full Wayland/Hyprland/archiso infrastructure
 block (DMA-BUF, SYNC_FILE, UDMABUF, DMABUF_HEAPS, SIMPLEDRM, SYSFB, overlayfs
 sub-options, input completeness, and seccomp for Flatpak sandboxing) documented
-in the v2.2.1 config under the Wayland/Hyprland/archiso pass section.
+in the v2.2.2 config under the Wayland/Hyprland/archiso pass section.
 
 ---
 
-### v2.2.1 -- USB Stability & Autosuspend Elimination
+### v2.2.2 -- USB Stability & Autosuspend Elimination
 
 > The "stop killing my keyboard, my mouse, and my DAC" release.
 
@@ -183,7 +271,7 @@ in the v2.2.1 config under the Wayland/Hyprland/archiso pass section.
 
 ---
 
-### v2.2.1 -- Precision Tuning Pass
+### v2.2.2 -- Precision Tuning Pass
 
 #### Scheduler
 
@@ -223,7 +311,7 @@ in the v2.2.1 config under the Wayland/Hyprland/archiso pass section.
 
 ---
 
-### v2.2.1 -- Universal Daily-Driver Pass
+### v2.2.2 -- Universal Daily-Driver Pass
 
 > 39 new config groups, 5 new subsystems, full distro compatibility. Full changelog below for reference.
 
@@ -281,7 +369,7 @@ Hyperion is built on five principles:
 
 | Category | Feature | Details |
 |---|---|---|
-| **Identity** | Custom branding | `uname -r` -> `2.2.1-Hyperion-2.2.1` |
+| **Identity** | Custom branding | `uname -r` -> `2.2.2-Hyperion-2.2.2` |
 | **Build** | Monolithic image | All in-tree modules promoted to `=y` -- zero module-load latency |
 | **Build** | ZSTD compression | ~40% faster boot than GZIP on NVMe (Phoronix) |
 | **Build** | KALLSYMS_ALL | Full symbol table -- required for sched_ext BPF introspection |
@@ -400,6 +488,7 @@ Every major Wi-Fi vendor across every generation is built-in. If you have a lapt
 | Qualcomm/Atheros | `ATH12K` | Wi-Fi 7 (be) | QCN9274, WCN7850 -- cutting-edge platforms |
 | Realtek | `RTW88` (PCI+USB) | 802.11ac | RTL8822B/C, RTL8821C, RTL8723D |
 | Realtek | `RTW89` (PCI+USB) | Wi-Fi 6/6E | RTL8852A/B/C, RTL8851B -- most 2022+ Realtek laptops |
+| Realtek | `RTL8192EU` (in-tree) | 802.11n | RTL8192EU -- TP-Link WN823N v2/v3 (patch: v2.2.2) |
 | Realtek | Legacy stack | 802.11n/ac | RTL8192CE/EE, RTL8723BE, RTL8812AE, RTL8821AE |
 | Intel | `IWLWIFI` (DVM+MVM) | 802.11ac/ax | AX200, AX210, AX211, 9260, 8265, 7265 |
 | MediaTek | `MT7921` E/U/S | Wi-Fi 6 | MT7921 PCIe, USB, SDIO variants |
@@ -556,7 +645,7 @@ Filesystems built-in: **ext4, ext3, XFS, Btrfs, F2FS, NTFS3, exFAT, vFAT, squash
 
 ## USB Power Management
 
-This is a dedicated section because USB peripheral stability is one of the most common sources of silent frustration on Linux. Hyperion v2.2.1 addresses it at every layer.
+This is a dedicated section because USB peripheral stability is one of the most common sources of silent frustration on Linux. Hyperion v2.2.2 addresses it at every layer.
 
 ### Root Cause
 
@@ -656,7 +745,7 @@ done
 
 ### Companion Files
 
-The companion files are distributed as a separate artifact (`hyperion-companion-2.2.1.tar.gz`) attached to the GitHub release. They are **not** baked into the kernel package because:
+The companion files are distributed as a separate artifact (`hyperion-companion-2.2.2.tar.gz`) attached to the GitHub release. They are **not** baked into the kernel package because:
 
 - Policy (udev rules, sysctl) should outlive individual kernel upgrades. Install once, works across all future Hyperion versions.
 - A headless server user installing Hyperion should not get `usbhid.mousepoll=1` applied silently.
@@ -665,7 +754,7 @@ The companion files are distributed as a separate artifact (`hyperion-companion-
 The companion tarball contains:
 
 ```
-hyperion-companion-2.2.1/
+hyperion-companion-2.2.2/
 |-- README.md
 |-- install.sh
 |-- udev/
@@ -785,7 +874,7 @@ Waydroid uses LXC containers, not KVM. Every dependency is built-in and audited:
 
 ## Security
 
-Hyperion v2.2.1 ships with three LSMs compiled in simultaneously. The active LSM is selected by the distro or user via the `security=` kernel command-line parameter.
+Hyperion v2.2.2 ships with three LSMs compiled in simultaneously. The active LSM is selected by the distro or user via the `security=` kernel command-line parameter.
 
 | LSM | Config | Default for | Activation |
 |---|---|---|---|
@@ -877,8 +966,8 @@ Additional hardening active by default:
 Hyperion treats module compatibility as a **first-class feature**, not an afterthought.
 
 **What this means in practice:**
-- Kernel headers installed to `/usr/src/linux-headers-2.2.1-Hyperion-2.2.1/`
-- Build symlink `/lib/modules/2.2.1-Hyperion-2.2.1/build` always points to the correct headers directory
+- Kernel headers installed to `/usr/src/linux-headers-2.2.2-Hyperion-2.2.2/`
+- Build symlink `/lib/modules/2.2.2-Hyperion-2.2.2/build` always points to the correct headers directory
 - `CONFIG_IKHEADERS=y` makes headers available at `/sys/kernel/kheaders.tar.xz` as a runtime fallback for any DKMS module that needs them
 - `CONFIG_IKCONFIG=y` + `CONFIG_IKCONFIG_PROC=y` -- running config always readable at `/proc/config.gz`
 - `CONFIG_MODVERSIONS=y` -- every exported symbol carries a CRC checksum; mismatched modules are rejected cleanly at `insmod` with a clear error, not a kernel panic
@@ -901,7 +990,7 @@ Hyperion treats module compatibility as a **first-class feature**, not an aftert
 
 ## Distro Compatibility
 
-Hyperion v2.2.1 is designed and tested for distribution-agnostic deployment. A single `bzImage` + `initramfs` pair boots and operates correctly on every mainstream Linux distribution.
+Hyperion v2.2.2 is designed and tested for distribution-agnostic deployment. A single `bzImage` + `initramfs` pair boots and operates correctly on every mainstream Linux distribution.
 
 | Distribution | Status | LSM Active | Package Manager |
 |---|---|---|---|
@@ -979,10 +1068,10 @@ emerge --ask sys-devel/bc dev-util/pahole sys-apps/kmod
 ### Build Steps
 
 ```bash
-# 1. Get Linux 2.2.1 source
-wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.1.tar.xz
-tar -xf linux-2.2.1.tar.xz
-cd linux-2.2.1
+# 1. Get Linux 2.2.2 source
+wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.19.6.tar.xz
+tar -xf linux-6.19.6.tar.xz
+cd linux-6.19.6
 
 # 2. Copy Hyperion config
 cp /path/to/hyperion/hyperion.config .config
@@ -994,7 +1083,7 @@ make olddefconfig
 make menuconfig
 
 # 5. Build (use all cores)
-make -j$(nproc) LOCALVERSION="-Hyperion-2.2.1"
+make -j$(nproc) LOCALVERSION="-Hyperion-2.2.2"
 
 # 6. Build modules (DKMS infrastructure)
 make modules -j$(nproc)
@@ -1018,7 +1107,7 @@ sudo grub2-mkconfig -o /boot/grub2/grub.cfg            # openSUSE
 Or use the automated script:
 
 ```bash
-sudo bash scripts/build-kernel.sh --source /path/to/linux-2.2.1
+sudo bash scripts/build-kernel.sh --source /path/to/linux-6.19.6
 ```
 
 ---
@@ -1033,14 +1122,14 @@ sudo reboot
 
 # Verify identity
 uname -r
-# Expected: 2.2.1-Hyperion-2.2.1
+# Expected: 2.2.2-Hyperion-2.2.2
 
 uname -v
-# Expected: #1 SMP PREEMPT Linux 2.2.1-Hyperion-2.2.1 (Soumalya Das) 2026
+# Expected: #1 SMP PREEMPT Linux 2.2.2-Hyperion-2.2.2 (Soumalya Das) 2026
 
 # Verify headers symlink
 ls -la /lib/modules/$(uname -r)/build
-# Should point to /usr/src/linux-headers-2.2.1-Hyperion-2.2.1
+# Should point to /usr/src/linux-headers-2.2.2-Hyperion-2.2.2
 
 # Verify IKCONFIG (running config)
 zcat /proc/config.gz | grep "CONFIG_USB_AUTOSUSPEND_DELAY"
@@ -1075,19 +1164,19 @@ Before booting the kernel, generate the initramfs. With all drivers built-in, th
 
 ```bash
 # mkinitcpio (Arch)
-sudo mkinitcpio -k 2.2.1-Hyperion-2.2.1 \
-  -g /boot/initramfs-2.2.1-Hyperion-2.2.1.img
+sudo mkinitcpio -k 2.2.2-Hyperion-2.2.2 \
+  -g /boot/initramfs-2.2.2-Hyperion-2.2.2.img
 
 # Or use the provided script
 chmod +x ./scripts/generate-initramfs.sh
 sudo ./scripts/generate-initramfs.sh
 
 # dracut (Fedora/RHEL/openSUSE)
-sudo dracut --force /boot/initramfs-2.2.1-Hyperion-2.2.1.img \
-  2.2.1-Hyperion-2.2.1
+sudo dracut --force /boot/initramfs-2.2.2-Hyperion-2.2.2.img \
+  2.2.2-Hyperion-2.2.2
 
 # initramfs-tools (Debian/Ubuntu)
-sudo update-initramfs -c -k 2.2.1-Hyperion-2.2.1
+sudo update-initramfs -c -k 2.2.2-Hyperion-2.2.2
 ```
 
 ### Installing a DKMS Module (example: v4l2loopback)
@@ -1101,7 +1190,7 @@ yay -S v4l2loopback-dkms
 
 # Verify
 sudo dkms status
-# v4l2loopback/0.12.x, 2.2.1-Hyperion-2.2.1, x86_64: installed
+# v4l2loopback/0.12.x, 2.2.2-Hyperion-2.2.2, x86_64: installed
 ```
 
 ### SELinux Setup (Fedora/RHEL users)
@@ -1128,11 +1217,11 @@ The companion files fix USB peripheral stability on distros with TLP or power-pr
 
 ```bash
 # Download the companion tarball from the GitHub release
-wget https://github.com/pro-grammer-SD/hyperion/releases/download/v2.2.1/hyperion-companion-2.2.1.tar.gz
+wget https://github.com/pro-grammer-SD/hyperion/releases/download/v2.2.2/hyperion-companion-2.2.2.tar.gz
 
 # Extract
-tar -xzf hyperion-companion-2.2.1.tar.gz
-cd hyperion-companion-2.2.1
+tar -xzf hyperion-companion-2.2.2.tar.gz
+cd hyperion-companion-2.2.2
 
 # Install all files and reload rules
 sudo bash install.sh
@@ -1263,7 +1352,7 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for the full guide.
 ```bash
 # Check if kernel is running
 uname -r
-# Expected: 2.2.1-Hyperion-2.2.1
+# Expected: 2.2.2-Hyperion-2.2.2
 
 # Check USB autosuspend is off
 cat /sys/module/usbcore/parameters/autosuspend
@@ -1319,7 +1408,7 @@ zcat /proc/config.gz | grep BLK_DEV_LOOP
 
 # If you see =m, the module may not be in your initramfs.
 # Rebuild the kernel with BLK_DEV_LOOP=y (built-in).
-# Hyperion v2.2.1+ has this set correctly.
+# Hyperion v2.2.2+ has this set correctly.
 
 # To verify loop devices exist at runtime:
 ls /dev/loop*
@@ -1468,6 +1557,6 @@ The Linux kernel itself is licensed under **GPL-2.0-only** as required by Linus 
 
 *Built with precision. Tuned for humans. Named after a Titan.*
 
-**Hyperion Kernel v2.2.1** - Soumalya Das - 2026
+**Hyperion Kernel v2.2.2** - Soumalya Das - 2026
 
 </div>

@@ -3,7 +3,7 @@
 # Hyperion Kernel — Automated Build & Install Script
 # Author: Soumalya Das
 # Year: 2026
-# Version: 2.2.1
+# Version: 2.2.2
 # =============================================================================
 
 set -euo pipefail
@@ -38,7 +38,7 @@ banner() {
     echo " ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║"
     echo " ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝"
     echo -e "\n"
-    echo " Hyperion Kernel Build System v2.2.1 | Author: Soumalya Das | Year: 2026"
+    echo " Hyperion Kernel Build System v2.2.2 | Author: Soumalya Das | Year: 2026"
     echo -e "\n"
 }
 
@@ -104,7 +104,7 @@ parse_config() {
     PATCH="${cfg[CONFIG_PATCHLEVEL]:-0}"
     SUBLEVEL="${cfg[CONFIG_SUBLEVEL]:-0}"
     EXTRAVERSION="${cfg[CONFIG_EXTRAVERSION]:-}"
-    LOCALVERSION="${cfg[CONFIG_LOCALVERSION]:--Hyperion-2.2.1}"
+    LOCALVERSION="${cfg[CONFIG_LOCALVERSION]:-Hyperion-2.2.2}"
 
     [[ ! "$VERSION" =~ ^[0-9]+$ ]] && error "CONFIG_VERSION must be integer"
     [[ ! "$PATCH" =~ ^[0-9]+$ ]] && error "CONFIG_PATCHLEVEL must be integer"
@@ -131,13 +131,26 @@ setup_kernel() {
     [[ "$INTERACTIVE" == true ]] && make menuconfig
 }
 
+copy_driver_sources() {
+    # Copy in-tree driver sources from the repo's drivers/ tree
+    # into the kernel source tree before patches are applied.
+    local drivers_src="$SCRIPT_DIR/../drivers"
+    [[ ! -d "$drivers_src" ]] && return
+    log "Copying in-tree driver sources to kernel tree..."
+    cp -r "$drivers_src"/. "$SOURCE_DIR/"
+    log "Driver sources copied: $(find "$drivers_src" -name "*.c" -o -name "*.h" | wc -l) source files"
+}
+
 apply_patches() {
     local patches_dir="$SCRIPT_DIR/../patches"
     [[ ! -d "$patches_dir" ]] && return
     for p in "$patches_dir"/*.patch; do
         [[ -f "$p" ]] || continue
         log "Applying patch: $(basename "$p")"
-        git apply "$p" || patch -p1 < "$p"
+        # --forward: silently skip already-applied patches (idempotent builds)
+        patch -p1 --forward --reject-file=/dev/null < "$p" || {
+            warn "Patch may already be applied, continuing: $(basename "$p")"
+        }
     done
 }
 
@@ -183,6 +196,7 @@ main() {
     banner
     parse_config
     setup_kernel
+    copy_driver_sources
     apply_patches
     build_kernel
     package_artifacts

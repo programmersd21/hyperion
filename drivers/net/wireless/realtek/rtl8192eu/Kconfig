@@ -1,0 +1,36 @@
+config RTL8192EU
+	tristate "Realtek RTL8192EU USB 802.11n Wi-Fi"
+	depends on MAC80211 && USB
+	select WIRELESS_EXT
+	select WEXT_PRIV
+	select LIB80211
+	select LIB80211_CRYPT_TKIP
+	select LIB80211_CRYPT_CCMP
+	select CFG80211
+	help
+	  This option adds support for the Realtek RTL8192EU USB
+	  802.11n 2T2R (300 Mbps) Wi-Fi chipset.
+
+	  Devices using this chipset:
+	    - TP-Link TL-WN823N v2 (2357:6109)
+	    - TP-Link TL-WN823N v3 (2357:6109)
+	    - Realtek RTL8192EU reference board (0bda:818b)
+	    - ASUS USB-N13 C1 (0b05:18f0)
+	    - D-Link DWA-131 rev E1 (2001:3319)
+	    - Edimax EW-7822ULC (7392:b611)
+
+	  The chip supports IEEE 802.11b/g/n on 2.4 GHz with up to
+	  300 Mbps PHY rate using two spatial streams (2T2R).
+
+	  The driver requires the firmware file:
+	    /lib/firmware/rtlwifi/rtl8192eufw.bin
+	  Available in the linux-firmware package:
+	    pacman -S linux-firmware     (Arch Linux)
+	    apt install firmware-realtek (Debian/Ubuntu)
+
+	  If you want to build this driver as a module, say M here
+	  and it will be called rtl8192eu. For built-in use (required
+	  for Hyperion monolithic builds), say Y here.
+
+	  Source: https://github.com/Mange/rtl8192eu-linux-driver
+	  In-tree port: Hyperion Kernel Project v2.2.2

@@ -44,18 +44,18 @@ sudo zypper install -y ncurses-devel openssl-devel bc dkms pahole zstd
 ## Getting the Kernel Source
 
 ```bash
-# Download Linux 2.2.1
-wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.1.tar.xz
-wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.1.tar.sign
+# Download Linux 2.2.2
+wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.2.tar.xz
+wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.2.tar.sign
 
 # Verify signature (optional but recommended)
-unxz linux-2.2.1.tar.xz
+unxz linux-2.2.2.tar.xz
 gpg --locate-keys torvalds@kernel.org gregkh@kernel.org
-gpg --verify linux-2.2.1.tar.sign
+gpg --verify linux-2.2.2.tar.sign
 
 # Extract
-tar -xf linux-2.2.1.tar
-cd linux-2.2.1
+tar -xf linux-2.2.2.tar
+cd linux-2.2.2
 ```
 
 ---
@@ -92,7 +92,7 @@ done
 ```bash
 # Build the kernel image, modules, and DTBs
 # Use all available CPU cores for maximum speed
-make -j$(nproc) LOCALVERSION="-Hyperion-2.2.1" 2>&1 | tee build.log
+make -j$(nproc) LOCALVERSION="-Hyperion-2.2.2" 2>&1 | tee build.log
 
 # Build modules only
 make modules -j$(nproc)
@@ -137,10 +137,10 @@ sudo reboot
 
 ```bash
 uname -r
-# Expected: 2.2.1-Hyperion-2.2.1
+# Expected: 2.2.2-Hyperion-2.2.2
 
 uname -v
-# Expected: #1 SMP PREEMPT Linux 2.2.1-Hyperion-2.2.1 (Soumalya Das) 2026
+# Expected: #1 SMP PREEMPT Linux 2.2.2-Hyperion-2.2.2 (Soumalya Das) 2026
 
 # Verify headers symlink exists
 ls -la /lib/modules/$(uname -r)/build
@@ -157,5 +157,5 @@ sudo dkms status
 See [scripts/build-kernel.sh](../scripts/build-kernel.sh) for a fully automated build and install script.
 
 ```bash
-sudo bash scripts/build-kernel.sh --source /path/to/linux-2.2.1 --auto
+sudo bash scripts/build-kernel.sh --source /path/to/linux-2.2.2 --auto
 ```

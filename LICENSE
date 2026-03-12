@@ -23,7 +23,7 @@ SOFTWARE.
 ---
 
 NOTE ON KERNEL LICENSE:
-The Linux kernel source code (linux-2.2.1) is licensed under the GNU General
+The Linux kernel source code (linux-2.2.2) is licensed under the GNU General
 Public License version 2 (GPL-2.0-only) with various exceptions for user-space
 headers. This repository contains only configuration files, scripts, patches,
 and documentation, which are covered by the MIT License above.

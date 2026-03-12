@@ -11,8 +11,8 @@
 
 set -euo pipefail
 
-KERNEL_VERSION="${1:-2.2.1}"
-HYPERION_VERSION="2.2.1"
+KERNEL_VERSION="${1:-2.2.2}"
+HYPERION_VERSION="2.2.2"
 SOURCE_DIR="${2:-./linux-${KERNEL_VERSION%.*}}"
 
 # Fixed timestamp for reproducible builds (ISO 8601)
