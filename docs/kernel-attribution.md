@@ -7,14 +7,14 @@ all version strings, `uname` output, and boot messages correctly identify as
 Expected result:
 
 ```
-Linux version 6.19.6-Hyperion-2.2.0 (Soumalya Das) (gcc version 13.2.0) #1 SMP PREEMPT 2026
+Linux version 2.2.1-Hyperion-2.2.1 (Soumalya Das) (gcc version 2.2.1) #1 SMP PREEMPT 2026
 ```
 
 ---
 
 ## 1. Makefile — Top-level version string
 
-Edit `linux-6.19.6/Makefile`:
+Edit `linux-2.2.1/Makefile`:
 
 ```makefile
 # Original
@@ -28,12 +28,12 @@ NAME = Hurr durr I'ma ninja sloth
 VERSION = 6
 PATCHLEVEL = 12
 SUBLEVEL = 0
-EXTRAVERSION = -Hyperion-2.2.0
+EXTRAVERSION = -Hyperion-2.2.1
 NAME = Hyperion
 ```
 
 The `EXTRAVERSION` is what appears in `uname -r` **when not overridden by**
-`CONFIG_LOCALVERSION`. Since we also set `CONFIG_LOCALVERSION="-Hyperion-2.2.0"`
+`CONFIG_LOCALVERSION`. Since we also set `CONFIG_LOCALVERSION="-Hyperion-2.2.1"`
 in `hyperion.config`, they work together. Set `EXTRAVERSION` in Makefile to
 empty and rely on `CONFIG_LOCALVERSION` for flexibility, OR set both to the
 same value for a hard-coded build.
@@ -42,7 +42,7 @@ same value for a hard-coded build.
 
 ```makefile
 EXTRAVERSION =
-# CONFIG_LOCALVERSION="-Hyperion-2.2.0" in .config handles the suffix
+# CONFIG_LOCALVERSION="-Hyperion-2.2.1" in .config handles the suffix
 ```
 
 ---
@@ -51,16 +51,16 @@ EXTRAVERSION =
 
 ```kconfig
 # In hyperion.config (already set):
-CONFIG_LOCALVERSION="-Hyperion-2.2.0"
+CONFIG_LOCALVERSION="-Hyperion-2.2.1"
 CONFIG_LOCALVERSION_AUTO=n
 ```
 
-This produces: `6.19.6-Hyperion-2.2.0`
+This produces: `2.2.1-Hyperion-2.2.1`
 
 **Build-time override** (takes precedence over config):
 
 ```bash
-make -j$(nproc) LOCALVERSION="-Hyperion-2.2.0"
+make -j$(nproc) LOCALVERSION="-Hyperion-2.2.1"
 ```
 
 ---
@@ -69,7 +69,7 @@ make -j$(nproc) LOCALVERSION="-Hyperion-2.2.0"
 
 This file generates the string printed at boot and available via `uname -v`.
 
-Edit `linux-6.19.6/init/version.c`:
+Edit `linux-2.2.1/init/version.c`:
 
 ```c
 /* Original line: */
@@ -104,7 +104,7 @@ In your build environment:
 ```bash
 export KBUILD_BUILD_USER="Soumalya Das"
 export KBUILD_BUILD_HOST="hyperion-build"
-make -j$(nproc) LOCALVERSION="-Hyperion-2.2.0"
+make -j$(nproc) LOCALVERSION="-Hyperion-2.2.1"
 ```
 
 This is the **recommended approach** as it requires no source modification.
@@ -128,10 +128,10 @@ If you want to also embed the git commit hash:
 
 ```bash
 # In scripts/setlocalversion, near the end, append custom string:
-echo "-Hyperion-2.2.0-$(git rev-parse --short HEAD 2>/dev/null || echo 'release')"
+echo "-Hyperion-2.2.1-$(git rev-parse --short HEAD 2>/dev/null || echo 'release')"
 ```
 
-This produces: `6.19.6-Hyperion-2.2.0-a3f9c21`
+This produces: `2.2.1-Hyperion-2.2.1-a3f9c21`
 
 ---
 
@@ -168,23 +168,23 @@ After building and booting:
 ```bash
 # Release string (uname -r)
 uname -r
-# → 6.19.6-Hyperion-2.2.0
+# → 2.2.1-Hyperion-2.2.1
 
 # Full version string (uname -v)
 uname -v
-# → #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.0 (Soumalya Das) 2026
+# → #1 SMP PREEMPT Linux 2.2.1-Hyperion-2.2.1 (Soumalya Das) 2026
 
 # All info
 uname -a
-# → Linux hyperion 6.19.6-Hyperion-2.2.0 #1 SMP PREEMPT ... (Soumalya Das) 2026 x86_64 GNU/Linux
+# → Linux hyperion 2.2.1-Hyperion-2.2.1 #1 SMP PREEMPT ... (Soumalya Das) 2026 x86_64 GNU/Linux
 
 # /proc interface
 cat /proc/version
-# → Linux version 6.19.6-Hyperion-2.2.0 (Soumalya Das) (gcc version 13.2.0 ...) #1 SMP PREEMPT 2026
+# → Linux version 2.2.1-Hyperion-2.2.1 (Soumalya Das) (gcc version 2.2.1 ...) #1 SMP PREEMPT 2026
 
 # Kernel banner in dmesg
 dmesg | head -3
-# → [    0.000000] Linux version 6.19.6-Hyperion-2.2.0 (Soumalya Das) ...
+# → [    0.000000] Linux version 2.2.1-Hyperion-2.2.1 (Soumalya Das) ...
 ```
 
 ---

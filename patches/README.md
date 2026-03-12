@@ -1,6 +1,6 @@
 # Hyperion Kernel Patches
 
-This directory contains patches applied on top of the Linux 6.19.6 baseline.
+This directory contains patches applied on top of the Linux 2.2.1 baseline.
 
 ---
 
@@ -26,7 +26,7 @@ Patches are applied automatically by `scripts/build-kernel.sh` in sorted order.
 
 Manual application:
 ```bash
-cd linux-6.19.6
+cd linux-2.2.1
 git apply ../patches/0001-example.patch
 # or
 patch -p1 < ../patches/0001-example.patch
@@ -36,7 +36,7 @@ patch -p1 < ../patches/0001-example.patch
 
 | Filename | Description | Status |
 |---|---|---|
-| *(none yet)* | Baseline release uses stock 6.19.6 | — |
+| *(none yet)* | Baseline release uses stock 2.2.1 | — |
 
 ## Adding Patches
 

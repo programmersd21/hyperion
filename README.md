@@ -7,14 +7,14 @@
  ██╔══██║  ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗██║██║   ██║██║╚██╗██║
  ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║
  ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.2.0</strong>
-      <span style="color:#ff6f00;">Linux 6.19.6</span> <span style="color:#e53935;">·</span> <span style="color:#00e676;">Universal</span> <span style="color:#e53935;">·</span> <span style="color:#ffea00;">Stable</span> <span style="color:#e53935;">·</span> <span style="color:#e040fb;">God-Tier Daily Driver</span>
+                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.2.1</strong>
+      <span style="color:#ff6f00;">Linux 2.2.1</span> <span style="color:#e53935;">·</span> <span style="color:#00e676;">Universal</span> <span style="color:#e53935;">·</span> <span style="color:#ffea00;">Stable</span> <span style="color:#e53935;">·</span> <span style="color:#e040fb;">God-Tier Daily Driver</span>
 </pre>
 
 <img src="icon/icon.png" alt="Hyperion Kernel Icon" width="120" style="margin: 10px; border-radius: 10px;">
 
 <p style="font-size:0.95em;">
-<strong>Author:</strong> Soumalya Das &nbsp;|&nbsp; <strong>License:</strong> MIT &nbsp;|&nbsp; <strong>Base:</strong> Linux 6.19.6 &nbsp;|&nbsp; <strong>Year:</strong> 2026
+<strong>Author:</strong> Soumalya Das &nbsp;|&nbsp; <strong>License:</strong> MIT &nbsp;|&nbsp; <strong>Base:</strong> Linux 2.2.1 &nbsp;|&nbsp; <strong>Year:</strong> 2026
 </p>
 
 <p>
@@ -22,7 +22,7 @@
 <img src="https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
 </a>
 <a href="https://kernel.org">
-<img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--2.2.1-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
+<img src="https://img.shields.io/badge/kernel-2.2.1--Hyperion--2.2.1-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
 </a>
 <a href="#supported-architectures">
 <img src="https://img.shields.io/badge/arch-x86__64-green?style=for-the-badge&color=f9a825" alt="Architecture">
@@ -48,8 +48,8 @@
 - [What's New in v2.2.1](#whats-new-in-v221)
   - [v2.2.1 -- Arch ISO Boot Pipeline & Wayland Graphics Pass](#v221----arch-iso-boot-pipeline--wayland-graphics-pass)
   - [v2.2.1 -- USB Stability & Autosuspend Elimination](#v221----usb-stability--autosuspend-elimination)
-  - [v2.1.0 -- Precision Tuning Pass](#v210--precision-tuning-pass)
-  - [v2.0.2 -- Universal Daily-Driver Pass](#v202--universal-daily-driver-pass)
+  - [v2.2.1 -- Precision Tuning Pass](#v210--precision-tuning-pass)
+  - [v2.2.1 -- Universal Daily-Driver Pass](#v202--universal-daily-driver-pass)
 - [Philosophy](#philosophy)
 - [Key Features](#key-features)
 - [Monolithic Architecture](#monolithic-architecture)
@@ -90,7 +90,7 @@
 
 ## Overview
 
-**Hyperion Kernel** is a custom Linux 6.19.6 kernel build engineered to be the definitive daily-driver kernel for every kind of Linux user -- gamers, developers, modders, tinkerers, and hobbyists. It combines the best configuration practices from CachyOS, XanMod, Nobara, Liquorix, and upstream Linux into a single, fully integrated, zero-compromise `bzImage`.
+**Hyperion Kernel** is a custom Linux 2.2.1 kernel build engineered to be the definitive daily-driver kernel for every kind of Linux user -- gamers, developers, modders, tinkerers, and hobbyists. It combines the best configuration practices from CachyOS, XanMod, Nobara, Liquorix, and upstream Linux into a single, fully integrated, zero-compromise `bzImage`.
 
 **v2.2.1 is the "Persistent Beast" release** -- a focused pass on USB peripheral stability, low-latency input polling, and sub-millisecond scheduler precision. If you have ever experienced a dropped first keypress after a pause, a USB DAC clicking on resume, a mouse stuttering after two seconds of idle, or a USB audio device silently disconnecting from PipeWire -- this release is the fix. It addresses all of these at every layer from kernel compile-time defaults down to userspace udev rules.
 
@@ -103,8 +103,8 @@ Hyperion v2.2.1 is designed for:
 - **Distro-agnostic users** -- SELinux (Fedora/RHEL), AppArmor (Ubuntu/Arch), TOMOYO (openSUSE) all compiled in with zero reconfiguration needed
 
 ```
-uname -r  ->  6.19.6-Hyperion-2.2.1
-uname -v  ->  #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.1 (Soumalya Das) 2026
+uname -r  ->  2.2.1-Hyperion-2.2.1
+uname -v  ->  #1 SMP PREEMPT Linux 2.2.1-Hyperion-2.2.1 (Soumalya Das) 2026
 ```
 
 ---
@@ -183,7 +183,7 @@ in the v2.2.1 config under the Wayland/Hyprland/archiso pass section.
 
 ---
 
-### v2.1.0 -- Precision Tuning Pass
+### v2.2.1 -- Precision Tuning Pass
 
 #### Scheduler
 
@@ -223,7 +223,7 @@ in the v2.2.1 config under the Wayland/Hyprland/archiso pass section.
 
 ---
 
-### v2.0.2 -- Universal Daily-Driver Pass
+### v2.2.1 -- Universal Daily-Driver Pass
 
 > 39 new config groups, 5 new subsystems, full distro compatibility. Full changelog below for reference.
 
@@ -281,7 +281,7 @@ Hyperion is built on five principles:
 
 | Category | Feature | Details |
 |---|---|---|
-| **Identity** | Custom branding | `uname -r` -> `6.19.6-Hyperion-2.2.1` |
+| **Identity** | Custom branding | `uname -r` -> `2.2.1-Hyperion-2.2.1` |
 | **Build** | Monolithic image | All in-tree modules promoted to `=y` -- zero module-load latency |
 | **Build** | ZSTD compression | ~40% faster boot than GZIP on NVMe (Phoronix) |
 | **Build** | KALLSYMS_ALL | Full symbol table -- required for sched_ext BPF introspection |
@@ -877,8 +877,8 @@ Additional hardening active by default:
 Hyperion treats module compatibility as a **first-class feature**, not an afterthought.
 
 **What this means in practice:**
-- Kernel headers installed to `/usr/src/linux-headers-6.19.6-Hyperion-2.2.1/`
-- Build symlink `/lib/modules/6.19.6-Hyperion-2.2.1/build` always points to the correct headers directory
+- Kernel headers installed to `/usr/src/linux-headers-2.2.1-Hyperion-2.2.1/`
+- Build symlink `/lib/modules/2.2.1-Hyperion-2.2.1/build` always points to the correct headers directory
 - `CONFIG_IKHEADERS=y` makes headers available at `/sys/kernel/kheaders.tar.xz` as a runtime fallback for any DKMS module that needs them
 - `CONFIG_IKCONFIG=y` + `CONFIG_IKCONFIG_PROC=y` -- running config always readable at `/proc/config.gz`
 - `CONFIG_MODVERSIONS=y` -- every exported symbol carries a CRC checksum; mismatched modules are rejected cleanly at `insmod` with a clear error, not a kernel panic
@@ -979,10 +979,10 @@ emerge --ask sys-devel/bc dev-util/pahole sys-apps/kmod
 ### Build Steps
 
 ```bash
-# 1. Get Linux 6.19.6 source
-wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.19.6.tar.xz
-tar -xf linux-6.19.6.tar.xz
-cd linux-6.19.6
+# 1. Get Linux 2.2.1 source
+wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.1.tar.xz
+tar -xf linux-2.2.1.tar.xz
+cd linux-2.2.1
 
 # 2. Copy Hyperion config
 cp /path/to/hyperion/hyperion.config .config
@@ -1018,7 +1018,7 @@ sudo grub2-mkconfig -o /boot/grub2/grub.cfg            # openSUSE
 Or use the automated script:
 
 ```bash
-sudo bash scripts/build-kernel.sh --source /path/to/linux-6.19.6
+sudo bash scripts/build-kernel.sh --source /path/to/linux-2.2.1
 ```
 
 ---
@@ -1033,14 +1033,14 @@ sudo reboot
 
 # Verify identity
 uname -r
-# Expected: 6.19.6-Hyperion-2.2.1
+# Expected: 2.2.1-Hyperion-2.2.1
 
 uname -v
-# Expected: #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.1 (Soumalya Das) 2026
+# Expected: #1 SMP PREEMPT Linux 2.2.1-Hyperion-2.2.1 (Soumalya Das) 2026
 
 # Verify headers symlink
 ls -la /lib/modules/$(uname -r)/build
-# Should point to /usr/src/linux-headers-6.19.6-Hyperion-2.2.1
+# Should point to /usr/src/linux-headers-2.2.1-Hyperion-2.2.1
 
 # Verify IKCONFIG (running config)
 zcat /proc/config.gz | grep "CONFIG_USB_AUTOSUSPEND_DELAY"
@@ -1075,19 +1075,19 @@ Before booting the kernel, generate the initramfs. With all drivers built-in, th
 
 ```bash
 # mkinitcpio (Arch)
-sudo mkinitcpio -k 6.19.6-Hyperion-2.2.1 \
-  -g /boot/initramfs-6.19.6-Hyperion-2.2.1.img
+sudo mkinitcpio -k 2.2.1-Hyperion-2.2.1 \
+  -g /boot/initramfs-2.2.1-Hyperion-2.2.1.img
 
 # Or use the provided script
 chmod +x ./scripts/generate-initramfs.sh
 sudo ./scripts/generate-initramfs.sh
 
 # dracut (Fedora/RHEL/openSUSE)
-sudo dracut --force /boot/initramfs-6.19.6-Hyperion-2.2.1.img \
-  6.19.6-Hyperion-2.2.1
+sudo dracut --force /boot/initramfs-2.2.1-Hyperion-2.2.1.img \
+  2.2.1-Hyperion-2.2.1
 
 # initramfs-tools (Debian/Ubuntu)
-sudo update-initramfs -c -k 6.19.6-Hyperion-2.2.1
+sudo update-initramfs -c -k 2.2.1-Hyperion-2.2.1
 ```
 
 ### Installing a DKMS Module (example: v4l2loopback)
@@ -1101,7 +1101,7 @@ yay -S v4l2loopback-dkms
 
 # Verify
 sudo dkms status
-# v4l2loopback/0.12.x, 6.19.6-Hyperion-2.2.1, x86_64: installed
+# v4l2loopback/0.12.x, 2.2.1-Hyperion-2.2.1, x86_64: installed
 ```
 
 ### SELinux Setup (Fedora/RHEL users)
@@ -1263,7 +1263,7 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for the full guide.
 ```bash
 # Check if kernel is running
 uname -r
-# Expected: 6.19.6-Hyperion-2.2.1
+# Expected: 2.2.1-Hyperion-2.2.1
 
 # Check USB autosuspend is off
 cat /sys/module/usbcore/parameters/autosuspend
