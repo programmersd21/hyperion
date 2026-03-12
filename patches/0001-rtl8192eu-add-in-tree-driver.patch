@@ -37,27 +37,23 @@ Signed-off-by: Hyperion Kernel Project <hyperion@kernel.local>
  drivers/net/wireless/realtek/Makefile          |  1 +
  drivers/net/wireless/realtek/rtl8192eu/...    | 523 files, 13 MB driver code
  19 files changed, 2156 insertions(+), 1 deletion(-)
- create mode 100644 drivers/net/wireless/realtek/Kconfig
- create mode 100644 drivers/net/wireless/realtek/Makefile
  create mode 100644 drivers/net/wireless/realtek/rtl8192eu/Kconfig
  create mode 100644 drivers/net/wireless/realtek/rtl8192eu/Makefile
  [521 additional files created for driver implementation]
 
 diff --git a/drivers/net/wireless/realtek/Kconfig b/drivers/net/wireless/realtek/Kconfig
-new file mode 100644
-index 0000000..abc1234
---- /dev/null
+index abc1234..def5678 100644
+--- a/drivers/net/wireless/realtek/Kconfig
 +++ b/drivers/net/wireless/realtek/Kconfig
-@@ -0,0 +1,2 @@
-+# SPDX-License-Identifier: GPL-2.0
+@@ -1,1 +1,2 @@
+ # SPDX-License-Identifier: GPL-2.0
 +source "drivers/net/wireless/realtek/rtl8192eu/Kconfig"
 diff --git a/drivers/net/wireless/realtek/Makefile b/drivers/net/wireless/realtek/Makefile
-new file mode 100644
-index 0000000..def5678
---- /dev/null
+index abc1234..def5678 100644
+--- a/drivers/net/wireless/realtek/Makefile
 +++ b/drivers/net/wireless/realtek/Makefile
-@@ -0,0 +1,2 @@
-+# SPDX-License-Identifier: GPL-2.0
+@@ -1,1 +1,2 @@
+ # SPDX-License-Identifier: GPL-2.0
 +obj-$(CONFIG_RTL8192EU) += rtl8192eu/
 diff --git a/drivers/net/wireless/realtek/rtl8192eu/Kconfig b/drivers/net/wireless/realtek/rtl8192eu/Kconfig
 new file mode 100644
@@ -96,5 +92,6 @@ index 0000000..abc1234
 +
 +	  Source: https://github.com/Mange/rtl8192eu-linux-driver
 +	  Implementation: Hyperion Kernel Project v2.2.2
++
 -- 
 2.40.0
