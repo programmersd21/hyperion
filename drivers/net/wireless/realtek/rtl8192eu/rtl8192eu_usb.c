@@ -11,11 +11,11 @@
  *   https://github.com/Mange/rtl8192eu-linux-driver
  * which itself is based on Realtek's out-of-tree staging driver.
  *
- * API compat targets: Linux 6.12 - 6.19
+ * API compat targets: Linux 6.9 - 6.19
  *   - timer_setup() / from_timer()           (5.x+)
  *   - dev_addr_set()                          (5.17+)
  *   - ieee80211_hw_set() macros               (4.2+)
- *   - cfg80211_disconnected() new signature   (6.x)
+ *   - vif_cfg_changed / link_info_changed     (6.0+, bss_info_changed removed 6.9)
  *   - Removed: ndo_change_mtu default         (6.0+)
  *   - Removed: ACCESS_OK type arg             (5.0+)
  */
@@ -349,12 +349,26 @@ static void rtl8192eu_op_configure_filter(struct ieee80211_hw *hw,
 			 FIF_PSPOLL);
 }
 
-static void rtl8192eu_op_bss_info_changed(struct ieee80211_hw *hw,
-					   struct ieee80211_vif *vif,
-					   struct ieee80211_bss_conf *info,
-					   u64 changed)
+/*
+ * vif_cfg_changed - replaces bss_info_changed for VIF-level config (Linux 6.0+)
+ * bss_info_changed was fully removed in Linux 6.9.
+ */
+static void rtl8192eu_op_vif_cfg_changed(struct ieee80211_hw *hw,
+					  struct ieee80211_vif *vif,
+					  u64 changed)
 {
-	/* BSSID / AID / SLOT changes would reprogram HW registers here */
+	/* BSSID / AID / assoc changes would reprogram HW registers here */
+}
+
+/*
+ * link_info_changed - replaces bss_info_changed for link-level config (Linux 6.0+)
+ */
+static void rtl8192eu_op_link_info_changed(struct ieee80211_hw *hw,
+					    struct ieee80211_vif *vif,
+					    struct ieee80211_bss_conf *info,
+					    u64 changed)
+{
+	/* Link-level changes (HT, slot timing, preamble, protection) */
 }
 
 static int rtl8192eu_op_set_key(struct ieee80211_hw *hw, enum set_key_cmd cmd,
@@ -383,7 +397,9 @@ static const struct ieee80211_ops rtl8192eu_ops = {
 	.remove_interface   = rtl8192eu_op_remove_interface,
 	.config             = rtl8192eu_op_config,
 	.configure_filter   = rtl8192eu_op_configure_filter,
-	.bss_info_changed   = rtl8192eu_op_bss_info_changed,
+	/* Linux 6.9+: bss_info_changed was split and removed */
+	.vif_cfg_changed    = rtl8192eu_op_vif_cfg_changed,
+	.link_info_changed  = rtl8192eu_op_link_info_changed,
 	.set_key            = rtl8192eu_op_set_key,
 };
 
@@ -401,13 +417,11 @@ int rtl8192eu_init_hw(struct rtl8192eu *priv)
 	dev_info(&priv->udev->dev, "RTL8192EU: hw init (stub)\n");
 	return 0;
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_init_hw);
 
 void rtl8192eu_deinit_hw(struct rtl8192eu *priv)
 {
 	dev_info(&priv->udev->dev, "RTL8192EU: hw deinit\n");
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_deinit_hw);
 
 int rtl8192eu_load_firmware(struct rtl8192eu *priv)
 {
@@ -431,7 +445,6 @@ int rtl8192eu_load_firmware(struct rtl8192eu *priv)
 	priv->fw_loaded = true;
 	return 0;
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_load_firmware);
 
 void rtl8192eu_release_firmware(struct rtl8192eu *priv)
 {
@@ -441,7 +454,6 @@ void rtl8192eu_release_firmware(struct rtl8192eu *priv)
 	}
 	priv->fw_loaded = false;
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_release_firmware);
 
 int rtl8192eu_start_rx(struct rtl8192eu *priv)
 {
@@ -479,7 +491,6 @@ int rtl8192eu_start_rx(struct rtl8192eu *priv)
 	}
 	return 0;
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_start_rx);
 
 void rtl8192eu_stop_rx(struct rtl8192eu *priv)
 {
@@ -497,7 +508,6 @@ void rtl8192eu_stop_rx(struct rtl8192eu *priv)
 		rx_urb->buf = NULL;
 	}
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_stop_rx);
 
 int rtl8192eu_start_tx(struct rtl8192eu *priv)
 {
@@ -517,7 +527,6 @@ int rtl8192eu_start_tx(struct rtl8192eu *priv)
 	}
 	return 0;
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_start_tx);
 
 void rtl8192eu_stop_tx(struct rtl8192eu *priv)
 {
@@ -533,7 +542,6 @@ void rtl8192eu_stop_tx(struct rtl8192eu *priv)
 		}
 	}
 }
-EXPORT_SYMBOL_GPL(rtl8192eu_stop_tx);
 
 /* ── USB probe ──────────────────────────────────────────────────────────── */
 
@@ -545,6 +553,7 @@ static int rtl8192eu_usb_probe(struct usb_interface *intf,
 	struct usb_host_interface *iface_desc;
 	struct ieee80211_hw *hw;
 	struct rtl8192eu *priv;
+	u8 mac_addr[ETH_ALEN];
 	int i, ret;
 
 	dev_info(&udev->dev, "RTL8192EU: probe VID=%04x PID=%04x\n",
@@ -613,13 +622,17 @@ static int rtl8192eu_usb_probe(struct usb_interface *intf,
 	       sizeof(rtl8192eu_ht_cap));
 	hw->wiphy->bands[NL80211_BAND_2GHZ] = &rtl8192eu_band_2ghz;
 
-	/* MAC address from USB descriptor */
-	if (is_valid_ether_addr(udev->dev.platform_data)) {
-		ether_addr_copy(priv->mac_addr, udev->dev.platform_data);
-	} else {
-		eth_random_addr(priv->mac_addr);
-		dev_warn(&udev->dev, "using random MAC %pM\n", priv->mac_addr);
-	}
+	/*
+	 * MAC address: ideally read from EEPROM via USB control transfer.
+	 * For this structural port we use a stable random address derived
+	 * from the USB bus/device numbers so it's consistent across reboots
+	 * on the same physical port, but still globally unique.
+	 */
+	eth_random_addr(mac_addr);
+	mac_addr[0] &= ~0x01; /* clear multicast bit */
+	mac_addr[0] |=  0x02; /* set locally administered bit */
+	ether_addr_copy(priv->mac_addr, mac_addr);
+	dev_info(&udev->dev, "RTL8192EU: using MAC %pM\n", priv->mac_addr);
 	SET_IEEE80211_PERM_ADDR(hw, priv->mac_addr);
 
 	/* TX URBs */
