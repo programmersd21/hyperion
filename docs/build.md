@@ -1,161 +1,76 @@
-# Building the Hyperion Kernel
-
-This document covers the full build process from source to bootable kernel.
-
----
+# Building Hyperion Kernel
 
 ## Prerequisites
 
-### Debian / Ubuntu / Linux Mint
-
+### Arch Linux
 ```bash
-sudo apt update
-sudo apt install -y \
-  build-essential libncurses-dev bison flex libssl-dev libelf-dev \
-  dwarves bc pahole git make gcc dkms xz-utils zstd cpio perl tar
+sudo pacman -S base-devel linux-firmware
 ```
 
-### Fedora / RHEL / CentOS Stream
-
+### Debian/Ubuntu
 ```bash
-sudo dnf groupinstall "Development Tools"
-sudo dnf install -y \
-  gcc make bison flex elfutils-libelf-devel openssl-devel \
-  ncurses-devel bc dkms git pahole zstd perl
+sudo apt install build-essential linux-firmware bc kmod cpio flex bison
 ```
 
-### Arch Linux / Manjaro / EndeavourOS
-
+### Fedora
 ```bash
-sudo pacman -S --needed \
-  base-devel xmlto kmod inetutils bc libelf pahole cpio perl \
-  tar xz zstd dkms git
+sudo dnf install gcc kernel-devel kernel-headers linux-firmware
 ```
 
-### openSUSE Tumbleweed / Leap
+## Build Steps
 
+### 1. Extract Kernel Source
 ```bash
-sudo zypper install -y -t pattern devel_basis
-sudo zypper install -y ncurses-devel openssl-devel bc dkms pahole zstd
+tar xzf linux-6.19.6.tar.gz
+cd linux-6.19.6
 ```
 
----
-
-## Getting the Kernel Source
-
+### 2. Apply Hyperion Patch
 ```bash
-# Download Linux 2.2.2
-wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.2.tar.xz
-wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-2.2.2.tar.sign
-
-# Verify signature (optional but recommended)
-unxz linux-2.2.2.tar.xz
-gpg --locate-keys torvalds@kernel.org gregkh@kernel.org
-gpg --verify linux-2.2.2.tar.sign
-
-# Extract
-tar -xf linux-2.2.2.tar
-cd linux-2.2.2
+patch -p1 < ../patches/0001-rtl8192eu-add-in-tree-driver.patch
 ```
 
----
-
-## Applying the Hyperion Config
-
+### 3. Configure Kernel
 ```bash
-# Copy config into the kernel source tree
-cp /path/to/hyperion/hyperion.config .config
+# Use Hyperion config
+cp ../hyperion.config .config
 
-# Resolve any new symbols introduced since config was generated
-make olddefconfig
-
-# Optional: Review changes interactively
+# Or customize
 make menuconfig
+# Enable: Device Drivers → Network device support → Wireless LAN → RTL8192EU
 ```
 
----
-
-## Applying Patches
-
+### 4. Build
 ```bash
-# Apply all Hyperion patches in order
-for patch in /path/to/hyperion/patches/*.patch; do
-    echo "Applying: $patch"
-    git apply "$patch" || patch -p1 < "$patch"
-done
+make -j$(nproc)
 ```
 
----
-
-## Building
-
+### 5. Install
 ```bash
-# Build the kernel image, modules, and DTBs
-# Use all available CPU cores for maximum speed
-make -j$(nproc) LOCALVERSION="-Hyperion-2.2.2" 2>&1 | tee build.log
-
-# Build modules only
-make modules -j$(nproc)
-```
-
-### Build Time Estimates (approximate)
-
-| CPU | Cores | Time |
-|-----|-------|------|
-| AMD Ryzen 9 7950X | 32 | ~3 min |
-| AMD Ryzen 7 5800X | 16 | ~7 min |
-| Intel Core i9-13900K | 24 | ~5 min |
-| Intel Core i7-12700 | 20 | ~6 min |
-
----
-
-## Installing
-
-```bash
-# Install kernel modules
+# As root
 sudo make modules_install
-
-# Install kernel headers (required for DKMS)
-sudo bash /path/to/hyperion/scripts/install-headers.sh
-
-# Install the kernel image
 sudo make install
 
 # Update bootloader
-sudo update-grub                                          # Debian/Ubuntu/Mint
-sudo grub2-mkconfig -o /boot/grub2/grub.cfg              # Fedora/RHEL
-sudo grub-mkconfig -o /boot/grub/grub.cfg                 # Arch
-sudo grub2-mkconfig -o /boot/efi/EFI/fedora/grub.cfg     # Fedora EFI
-
-# Reboot
-sudo reboot
+sudo update-grub  # Debian/Ubuntu
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg  # Fedora
 ```
 
----
-
-## Verification After Boot
+## Automatic Build
 
 ```bash
-uname -r
-# Expected: 2.2.2-Hyperion-2.2.2
-
-uname -v
-# Expected: #1 SMP PREEMPT Linux 2.2.2-Hyperion-2.2.2 (Soumalya Das) 2026
-
-# Verify headers symlink exists
-ls -la /lib/modules/$(uname -r)/build
-
-# Check DKMS builds
-sudo dkms autoinstall
-sudo dkms status
+./scripts/build-kernel.sh
 ```
 
----
-
-## Automated Build Script
-
-See [scripts/build-kernel.sh](../scripts/build-kernel.sh) for a fully automated build and install script.
+## Verification
 
 ```bash
-sudo bash scripts/build-kernel.sh --source /path/to/linux-2.2.2 --auto
+# Check driver loaded
+lsmod | grep rtl8192eu
+
+# Check device
+lsusb | grep -i realtek
+
+# Check network interface
+ip link show
 ```

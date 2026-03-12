@@ -28,14 +28,11 @@
 
 #define PLATFORM_LINUX
 
-/* cfg80211 glue is required for NetworkManager / wpa_supplicant on modern Linux.
- * Without this the adapter appears as a raw wext device and most distributions
- * will not be able to manage it automatically. */
-#define CONFIG_IOCTL_CFG80211
+/* #define CONFIG_IOCTL_CFG80211 */
 
 #ifdef CONFIG_IOCTL_CFG80211
-	#define RTW_USE_CFG80211_STA_EVENT /* report new STAs via cfg80211_new_sta */
-	/* #define CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER */ /* not needed for kernels >= 3.0 */
+	/* #define RTW_USE_CFG80211_STA_EVENT */ /* Indecate new sta asoc through cfg80211_new_sta */
+	#define CONFIG_CFG80211_FORCE_COMPATIBLE_2_6_37_UNDER
 	/* #define CONFIG_DEBUG_CFG80211 */
 	/* #define CONFIG_DRV_ISSUE_PROV_REQ */ /* IOT FOR S2 */
 	#define CONFIG_SET_SCAN_DENY_TIMER
