@@ -22,7 +22,7 @@ sudo reboot
 ### 2. Verify Installation
 ```bash
 uname -r
-# Should show: 6.19.6-hyperion-2.2.2
+# Should show: 6.19.6-hyperion-2.2.3
 ```
 
 ### 3. Load WiFi Driver

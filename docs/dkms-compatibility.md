@@ -81,7 +81,7 @@ them — compression adds a step that some older DKMS versions mishandle.
 ## Installing Headers Correctly
 
 ```bash
-cd linux-2.2.2
+cd linux-2.2.3
 
 # Step 1: Install sanitised user-space API headers
 sudo make headers_install INSTALL_HDR_PATH=/usr
@@ -90,7 +90,7 @@ sudo make headers_install INSTALL_HDR_PATH=/usr
 sudo make modules_prepare
 
 # Step 3: Copy full headers directory
-KVER="2.2.2-Hyperion-2.2.2"
+KVER="2.2.3-Hyperion-2.2.3"
 sudo mkdir -p /usr/src/linux-headers-${KVER}
 
 # Copy all header files
@@ -106,7 +106,7 @@ sudo ln -sfn /usr/src/linux-headers-${KVER} \
 
 # Verify
 ls -la /lib/modules/${KVER}/build
-# → /lib/modules/2.2.2-Hyperion-2.2.2/build -> /usr/src/linux-headers-2.2.2-Hyperion-2.2.2
+# → /lib/modules/2.2.3-Hyperion-2.2.3/build -> /usr/src/linux-headers-2.2.3-Hyperion-2.2.3
 ```
 
 The `install-headers.sh` script does all of this automatically.
@@ -126,7 +126,7 @@ sudo dkms autoinstall -k $(uname -r)
 sudo dkms install nvidia/550.54.14 -k $(uname -r)
 
 # 4. Verbose build to diagnose failures
-sudo dkms build -m v4l2loopback -v 2.2.2 -k $(uname -r) --verbose
+sudo dkms build -m v4l2loopback -v 2.2.3 -k $(uname -r) --verbose
 
 # 5. Check module loading
 sudo modprobe v4l2loopback
@@ -147,7 +147,7 @@ sudo dnf install akmod-nvidia       # Fedora (akmods variant)
 
 # Verify
 sudo dkms status | grep nvidia
-# nvidia/550.54.14, 2.2.2-Hyperion-2.2.2, x86_64: installed ✓
+# nvidia/550.54.14, 2.2.3-Hyperion-2.2.3, x86_64: installed ✓
 
 # Load
 sudo modprobe nvidia
@@ -190,7 +190,7 @@ with the current kernel's CRC.
 
 **Hyperion provides** `Module.symvers` at:
 ```
-/usr/src/linux-headers-2.2.2-Hyperion-2.2.2/Module.symvers
+/usr/src/linux-headers-2.2.3-Hyperion-2.2.3/Module.symvers
 ```
 
 DKMS automatically uses this file during module builds via:

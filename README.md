@@ -7,7 +7,7 @@
  ██╔══██║  ╚██╔╝  ██╔═══╝ ██╔══╝  ██╔══██╗██║██║   ██║██║╚██╗██║
  ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║
  ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.2.2</strong>
+                  <strong style="color:#1e88e5;">H Y P E R I O N · v2.2.3</strong>
       <span style="color:#ff6f00;">Linux 6.19.6</span> <span style="color:#e53935;">·</span> <span style="color:#00e676;">Universal</span> <span style="color:#e53935;">·</span> <span style="color:#ffea00;">Stable</span> <span style="color:#e53935;">·</span> <span style="color:#e040fb;">God-Tier Daily Driver</span>
 </pre>
 
@@ -22,7 +22,7 @@
 <img src="https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
 </a>
 <a href="https://kernel.org">
-<img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--2.2.2-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
+<img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--2.2.3-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
 </a>
 <a href="#supported-architectures">
 <img src="https://img.shields.io/badge/arch-x86__64-green?style=for-the-badge&color=f9a825" alt="Architecture">
@@ -45,7 +45,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [What's New in v2.2.2](#whats-new-in-v222)
+- [What's New in v2.2.3](#whats-new-in-v222)
 - [Philosophy](#philosophy)
 - [Key Features](#key-features)
 - [Performance Configuration](#performance-configuration)
@@ -72,16 +72,16 @@
 
 **Hyperion Kernel** is a custom Linux 6.19.6 kernel build engineered to be the definitive daily-driver kernel for every kind of Linux user — gamers, developers, security engineers, audio producers, and tinkerers. It combines the best configuration practices from CachyOS, XanMod, Nobara, Liquorix, and upstream Linux into a single, fully integrated, zero-compromise `bzImage`.
 
-**v2.2.2 is the "2026 Baseline" release** — a focused pass on performance correctness, system security, and runtime observability. Every improvement is expressed as a kernel configuration choice backed by upstream in-tree code. No out-of-tree driver patches. No staging code. Just the right config, fully documented.
+**v2.2.3 is the "2026 Baseline" release** — a focused pass on performance correctness, system security, and runtime observability. Every improvement is expressed as a kernel configuration choice backed by upstream in-tree code. No out-of-tree driver patches. No staging code. Just the right config, fully documented.
 
 ```
-uname -r  →  6.19.6-Hyperion-2.2.2
-uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.2 (Soumalya Das) 2026
+uname -r  →  6.19.6-Hyperion-2.2.3
+uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.3 (Soumalya Das) 2026
 ```
 
 ---
 
-## What's New in v2.2.2
+## What's New in v2.2.3
 
 > *"Config-driven, not patch-driven. The kernel community maintains the code. We choose the right options."*
 
@@ -89,7 +89,7 @@ uname -v  →  #1 SMP PREEMPT Linux 6.19.6-Hyperion-2.2.2 (Soumalya Das) 2026
 
 Previous Hyperion releases attempted to add out-of-tree driver code via source patches. This causes cascading `make[2]: *** [drivers] Error 2` failures on every kernel version bump because a single changed API signature breaks hundreds of driver files. Drivers removed from staging were removed for reasons: code quality, lack of maintenance, or better alternatives already in-tree.
 
-v2.2.2 takes the correct approach: **all improvements are configuration choices**, backed by upstream code that the kernel community actively maintains. The single patch in this release adds documentation only.
+v2.2.3 takes the correct approach: **all improvements are configuration choices**, backed by upstream code that the kernel community actively maintains. The single patch in this release adds documentation only.
 
 ---
 
@@ -253,7 +253,7 @@ Hyperion is built on five principles:
 
 | Category | Feature | Details |
 |---|---|---|
-| **Identity** | Custom branding | `uname -r` → `6.19.6-Hyperion-2.2.2` |
+| **Identity** | Custom branding | `uname -r` → `6.19.6-Hyperion-2.2.3` |
 | **Build** | Monolithic image | All in-tree drivers promoted to `=y` — zero module-load latency |
 | **Build** | ZSTD compression | ~40% faster boot than GZIP on NVMe |
 | **BPF** | JIT always-on | Native x86_64 BPF, no interpreter, Spectre-BPF mitigated |
@@ -459,10 +459,10 @@ tar -xf linux-6.19.6.tar.xz && cd linux-6.19.6
 # Apply patches and config
 for p in ../patches/*.patch; do patch -p1 --fuzz=5 < "$p"; done
 cp ../hyperion.config .config
-make olddefconfig LOCALVERSION="-Hyperion-2.2.2"
+make olddefconfig LOCALVERSION="-Hyperion-2.2.3"
 
 # Build
-make -j$(nproc) LOCALVERSION="-Hyperion-2.2.2" bzImage modules
+make -j$(nproc) LOCALVERSION="-Hyperion-2.2.3" bzImage modules
 ```
 
 ---
@@ -478,19 +478,19 @@ sudo update-grub   # or grub2-mkconfig / grub-mkconfig per your distro
 Generate initramfs:
 ```bash
 # Arch (mkinitcpio)
-sudo mkinitcpio -k 6.19.6-Hyperion-2.2.2 -g /boot/initramfs-hyperion-2.2.2.img
+sudo mkinitcpio -k 6.19.6-Hyperion-2.2.3 -g /boot/initramfs-hyperion-2.2.3.img
 
 # Fedora/RHEL (dracut)
-sudo dracut --force /boot/initramfs-6.19.6-Hyperion-2.2.2.img 6.19.6-Hyperion-2.2.2
+sudo dracut --force /boot/initramfs-6.19.6-Hyperion-2.2.3.img 6.19.6-Hyperion-2.2.3
 
 # Debian/Ubuntu (update-initramfs)
-sudo update-initramfs -c -k 6.19.6-Hyperion-2.2.2
+sudo update-initramfs -c -k 6.19.6-Hyperion-2.2.3
 ```
 
 Post-install verification:
 ```bash
 uname -r
-# Expected: 6.19.6-Hyperion-2.2.2
+# Expected: 6.19.6-Hyperion-2.2.3
 
 cat /proc/sys/net/core/bpf_jit_enable
 # Expected: 1
@@ -603,6 +603,6 @@ The Linux kernel itself is licensed under **GPL-2.0-only**.
 
 *Built with precision. Tuned for humans. Named after a Titan.*
 
-**Hyperion Kernel v2.2.2** · Soumalya Das · 2026
+**Hyperion Kernel v2.2.3** · Soumalya Das · 2026
 
 </div>
