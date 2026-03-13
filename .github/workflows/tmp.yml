@@ -11,25 +11,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout full repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure Git author
+      - name: Configure Git user
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Regex replace semver everywhere
+      - name: Replace semver everywhere except workflows
         run: |
-          # Find all text files (excluding .git)
-          find . -path "./.git" -prune -o -type f -print0 \
+          find . -type f \
+            ! -path "./.git/*" \
+            ! -path "./.github/workflows/*" \
+            -print0 \
           | xargs -0 sed -Ei 's/2\.2\.3/2.2.4/g'
 
-          # Only commit if there are changes
-          if git diff --cached --quiet && git diff --quiet; then
-            echo "No matches for 2.2.3 found."
+          if git diff --quiet; then
+            echo "Nothing to update."
             exit 0
           fi
 
@@ -38,4 +38,4 @@ jobs:
           git push
 
       - name: Done
-        run: echo "✔ semver bump completed."
+        run: echo "Done semver bump."
