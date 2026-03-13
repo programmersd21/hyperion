@@ -40,14 +40,14 @@ for patch in ../patches/*.patch; do
 done
 ```
 
-The only patch in v2.2.3 adds a documentation file — it is safe on any
+The only patch in v2.2.4 adds a documentation file — it is safe on any
 Linux 6.x tree and cannot conflict with upstream changes.
 
 ### 3. Apply Hyperion config
 
 ```bash
 cp ../hyperion.config .config
-make olddefconfig LOCALVERSION="-Hyperion-2.2.3"
+make olddefconfig LOCALVERSION="-Hyperion-2.2.4"
 ```
 
 `make olddefconfig` resolves all new symbols to their Kconfig defaults.
@@ -64,7 +64,7 @@ SECURITY_IPE|ZRAM_MULTI_COMP|SECURITY_LANDLOCK|STACKTRACE)=" .config
 make menuconfig
 ```
 
-Notable locations for the new v2.2.3 options:
+Notable locations for the new v2.2.4 options:
 
 | Config | menuconfig path |
 |---|---|
@@ -81,7 +81,7 @@ Notable locations for the new v2.2.3 options:
 
 ```bash
 make -j$(nproc) \
-  LOCALVERSION="-Hyperion-2.2.3" \
+  LOCALVERSION="-Hyperion-2.2.4" \
   KCFLAGS="-pipe" \
   bzImage modules
 ```
@@ -136,7 +136,7 @@ correct cache layers.
 ```bash
 # Verify uname
 uname -r
-# Expected: 6.19.6-Hyperion-2.2.3
+# Expected: 6.19.6-Hyperion-2.2.4
 
 # Verify BPF JIT is active
 cat /proc/sys/net/core/bpf_jit_enable

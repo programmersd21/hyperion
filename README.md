@@ -435,7 +435,7 @@ This option prevents TCP from buffering more data in the kernel send buffer than
 
 `CONFIG_ZRAM_DEF_COMP2="lz4hc"` — the secondary compression stream for ZRAM multi-comp.
 
-With `CONFIG_ZRAM_MULTI_COMP=y` (already present since v2.2.3), ZRAM supports two compression algorithms simultaneously:
+With `CONFIG_ZRAM_MULTI_COMP=y` (already present since v2.2.4), ZRAM supports two compression algorithms simultaneously:
 
 - **Primary stream** (`zstd`): best compression ratio — maximises the amount of data you can fit into ZRAM
 - **Secondary stream** (`lz4hc`): LZ4 High Compression — better ratio than plain LZ4, with 3–4× faster decompression than ZSTD under extreme memory pressure

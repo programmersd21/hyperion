@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hyperion Kernel Builder v2.2.3
+# Hyperion Kernel Builder v2.2.4
 # Builds Linux 6.19.6 with the Hyperion configuration and patches.
 #
 # Usage:
@@ -9,7 +9,7 @@
 set -euo pipefail
 
 KERNEL_VERSION="6.19.6"
-HYPERION_VER="2.2.3"
+HYPERION_VER="2.2.4"
 LOCALVERSION="-Hyperion-${HYPERION_VER}"
 TARBALL="linux-${KERNEL_VERSION}.tar.xz"
 KERNEL_DIR="kernel"
