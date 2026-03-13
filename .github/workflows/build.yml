@@ -14,19 +14,15 @@ permissions:
 # CACHING ARCHITECTURE
 # ─────────────────────────────────────────────────────────────────────────────
 #
-#  Layer 1 │ APT packages     │ apt-kernel-build-v1
-#           │                  │ Saves ~30s of apt-get install per run
-#
-#  Layer 2 │ ccache           │ ccache-<os>-<ver>-<cfg>-<patches>-<run_id>
-#           │                  │ KEY BUG FIX: always save a NEW key per run
-#           │                  │ so restore-keys always finds the freshest
-#           │                  │ partial cache, never a stale pinned key.
+#  Layer 1 │ ccache           │ ccache-<os>-<ver>-<cfg>-<patches>-<run_id>
+#           │                  │ Always saves a NEW key per run so restore-keys
+#           │                  │ always finds the freshest partial cache.
 #           │                  │ SLOPPINESS + DIRECT mode = max hit rate.
 #
-#  Layer 3 │ Source tarball   │ kernel-tarball-<version>
+#  Layer 2 │ Source tarball   │ kernel-tarball-<version>
 #           │                  │ Immutable. Downloaded once, cached forever.
 #
-#  Layer 4 │ Full build tree  │ kernel-tree-<ver>-<cfg>-<patches>
+#  Layer 3 │ Full build tree  │ kernel-tree-<ver>-<cfg>-<patches>
 #           │                  │ Exact match = zero rebuild (incremental make).
 #           │                  │ Partial match via restore-keys still helps.
 #           │                  │ Saved unconditionally after every build.
@@ -81,7 +77,6 @@ jobs:
                   f.write(f"{k}={v}\n")
           EOF
 
-
   build-kernel:
     needs: validate-config
     runs-on: ubuntu-latest
@@ -100,24 +95,24 @@ jobs:
       # KBUILD_BUILD_TIMESTAMP is set dynamically from git history below
 
       # ── ccache ─────────────────────────────────────────────────────────────
-      CCACHE_DIR:          ${{ github.workspace }}/.ccache
-      CCACHE_MAXSIZE:      8G
+      CCACHE_DIR:           ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE:       8G
       # Compression: on, level 6 (good balance of speed vs size)
-      CCACHE_COMPRESS:     1
+      CCACHE_COMPRESS:      1
       CCACHE_COMPRESSLEVEL: 6
       # Direct mode: skip preprocessing step, cache by hash of source + headers
-      CCACHE_DIRECT:       1
+      CCACHE_DIRECT:        1
       # Basedir strips the workspace prefix from paths in the cache, so the
       # cache is portable across different runner checkout paths
-      CCACHE_BASEDIR:      ${{ github.workspace }}
-      CCACHE_NOHASHDIR:    1
+      CCACHE_BASEDIR:       ${{ github.workspace }}
+      CCACHE_NOHASHDIR:     1
       # Sloppiness: critical for kernel builds
       #   time_macros         — ignore __DATE__ / __TIME__ (we fix the timestamp anyway)
       #   include_file_mtime  — don't invalidate on header mtime, only content
       #   include_file_ctime  — same for ctime
       #   file_stat_matches   — use stat() instead of content hash for unchanged files
       #   pch_defines         — handle precompiled-header define changes gracefully
-      CCACHE_SLOPPINESS:   time_macros,include_file_mtime,include_file_ctime,file_stat_matches,pch_defines
+      CCACHE_SLOPPINESS:    time_macros,include_file_mtime,include_file_ctime,file_stat_matches,pch_defines
 
     steps:
 
@@ -134,29 +129,22 @@ jobs:
           echo "KBUILD_BUILD_TIMESTAMP=$(date -u -d "@$SOURCE_DATE_EPOCH" '+%a %b %e %H:%M:%S UTC %Y')" >> "$GITHUB_ENV"
           echo "KBUILD_BUILD_VERSION=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
 
-      # ── Layer 1: APT cache ─────────────────────────────────────────────────
-      - name: Restore APT cache
-        id: apt-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            /var/cache/apt/archives/*.deb
-            /var/lib/apt/lists
-          key: apt-kernel-build-v1
-          restore-keys: apt-kernel-build-
-
+      # ── Dependencies ───────────────────────────────────────────────────────
+      # APT caching is intentionally omitted: GitHub runners refresh their
+      # package index on every boot, making cached .deb archives unreliable.
+      # The install is fast enough (~20–30 s) that the complexity isn't worth it.
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
             build-essential bc bison flex \
             libssl-dev libelf-dev libncurses-dev \
-            dwarves rsync cpio wget \
-            ccache zstd ca-certificates
+            dwarves rsync cpio \
+            ccache zstd
           # Put ccache shims first so 'gcc' resolves to ccache transparently
           echo "/usr/lib/ccache" >> "$GITHUB_PATH"
 
-      # ── Layer 2: ccache (restore) ──────────────────────────────────────────
+      # ── Layer 1: ccache (restore) ──────────────────────────────────────────
       # Use cache/restore (not cache) so we can save a fresh key after build.
       # Primary key includes run_id so we ALWAYS write a new entry, and
       # restore-keys fan out from most- to least-specific for the best warmup.
@@ -175,7 +163,7 @@ jobs:
       - name: Zero ccache stats (for clean per-run reporting)
         run: ccache --zero-stats
 
-      # ── Layer 3: Source tarball ────────────────────────────────────────────
+      # ── Layer 2: Source tarball ────────────────────────────────────────────
       - name: Restore kernel source tarball
         id: kernel-tarball
         uses: actions/cache@v4
@@ -186,12 +174,12 @@ jobs:
       - name: Download kernel tarball
         if: steps.kernel-tarball.outputs.cache-hit != 'true'
         run: |
-          wget -q --show-progress \
-            "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz" \
-            "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/sha256sums.asc"
-          grep "linux-${FULL_VERSION}.tar.xz" sha256sums.asc | sha256sum -c -
+          curl -fsSL --output "linux-${FULL_VERSION}.tar.xz" \
+            "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/linux-${FULL_VERSION}.tar.xz"
+          curl -fsSL "https://cdn.kernel.org/pub/linux/kernel/v${KERNEL_VERSION}.x/sha256sums.asc" \
+            | grep "linux-${FULL_VERSION}.tar.xz" | sha256sum -c -
 
-      # ── Layer 4: Build tree (restore) ─────────────────────────────────────
+      # ── Layer 3: Build tree (restore) ─────────────────────────────────────
       # Exact hit = incremental make (only changed files recompile).
       # Partial hit = more ccache warmup, still much faster than cold.
       - name: Restore build tree
@@ -231,11 +219,13 @@ jobs:
           shopt -s nullglob
           for patch in ../patches/*.patch; do
             echo "  → applying $(basename "$patch")"
-            patch -p1 --fuzz=5 < "$patch"
+            patch -p1 < "$patch"
           done
 
       # ── Build ──────────────────────────────────────────────────────────────
-      # -pipe:    use pipes instead of temp files between compiler passes
+      # -pipe:      use pipes instead of temp files between compiler passes
+      # bzImage only: modules are not packaged so skip the modules target to
+      #               avoid spending ~30–60 % of build time on unused output.
       # LOCALVERSION: must match what was passed to olddefconfig above
       - name: Build kernel
         working-directory: kernel
@@ -244,14 +234,14 @@ jobs:
             CC="ccache gcc" \
             LOCALVERSION="-Hyperion-${HYPERION_VER}" \
             KCFLAGS="-pipe" \
-            bzImage modules
+            bzImage
 
       # ── ccache report ──────────────────────────────────────────────────────
       - name: ccache statistics
         if: always()
         run: ccache --show-stats --verbose
 
-      # ── Layer 4: Build tree (save) ────────────────────────────────────────
+      # ── Layer 3: Build tree (save) ────────────────────────────────────────
       # Always save so the next run gets the freshest incremental state.
       # If key already exists GitHub skips the upload silently.
       - name: Save build tree
@@ -261,7 +251,7 @@ jobs:
           path: kernel
           key: kernel-tree-${{ env.FULL_VERSION }}-${{ env.CONFIG_HASH }}-${{ env.PATCHES_HASH }}
 
-      # ── Layer 2: ccache (save) ────────────────────────────────────────────
+      # ── Layer 1: ccache (save) ────────────────────────────────────────────
       # Save even on build failure so a partial run still warms future runs.
       - name: Save ccache
         if: always()
