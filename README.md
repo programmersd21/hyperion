@@ -18,8 +18,8 @@
 </p>
 
 <p>
-<a href="https://github.com/pro-grammer-SD/hyperion/actions">
-<img src="https://img.shields.io/github/actions/workflow/status/pro-grammer-SD/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
+<a href="https://github.com/programmersd/hyperion/actions">
+<img src="https://img.shields.io/github/actions/workflow/status/programmersd/hyperion/build.yml?style=for-the-badge&label=Kernel%20Build&color=1e88e5" alt="Build Status">
 </a>
 <a href="https://kernel.org">
 <img src="https://img.shields.io/badge/kernel-6.19.6--Hyperion--2.2.4-blue?style=for-the-badge&color=43a047" alt="Kernel Version">
